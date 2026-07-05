@@ -127,6 +127,10 @@ namespace BetterLyrics.WinUI3
             var pluginService = Ioc.Default.GetRequiredService<IPluginService>();
             await pluginService.LoadPluginsAsync();
 
+            // 启动花再 Halo PixelBar 歌词显示服务
+            var haloPixelBar = Ioc.Default.GetRequiredService<Services.HaloPixelBar.HaloPixelBarService>();
+            haloPixelBar.Start();
+
             // 确保播放源配置内歌词源与插件保持最新
             EnsureLyricsSearchProvidersInfo();
 

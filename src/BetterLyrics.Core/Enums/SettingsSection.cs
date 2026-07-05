@@ -7,6 +7,7 @@
         MediaLib,
         PlaybackLib,
         Plugins,
+        HaloPixelBar,
         About
     }
 }

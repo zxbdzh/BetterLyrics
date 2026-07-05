@@ -28,6 +28,7 @@ namespace BetterLyrics.WinUI3.ViewModels
             MenuItems.Add(new NavMenuItem { Label = _localizationService.GetLocalizedString("SettingsPageMediaLib"), Glyph = "\uE8B7", Section = SettingsSection.MediaLib });
             MenuItems.Add(new NavMenuItem { Label = _localizationService.GetLocalizedString("SettingsPagePlaybackLib"), Glyph = "\uEA69", Section = SettingsSection.PlaybackLib });
             MenuItems.Add(new NavMenuItem { Label = _localizationService.GetLocalizedString("SettingsPagePlugins"), Glyph = "\uE74C", Section = SettingsSection.Plugins });
+            MenuItems.Add(new NavMenuItem { Label = "\u82B1\u518D PixelBar", Glyph = "\uE7F4", Section = SettingsSection.HaloPixelBar });
             MenuItems.Add(new NavMenuItem { Label = _localizationService.GetLocalizedString("SettingsPageAbout"), Glyph = "\uE946", Section = SettingsSection.About });
 
             SelectedMenuItem = MenuItems[0];

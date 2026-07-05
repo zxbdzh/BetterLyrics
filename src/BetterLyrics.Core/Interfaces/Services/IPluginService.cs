@@ -7,6 +7,10 @@
         /// </summary>
         T? GetPlugin<T>() where T : class;
         /// <summary>
+        /// 返回已加载的特定类型的所有插件实例
+        /// </summary>
+        IEnumerable<T> GetPlugins<T>() where T : class;
+        /// <summary>
         /// 程序启动时调用：同步文件 -> 清理配置 -> 加载插件
         /// </summary>
         Task LoadPluginsAsync();

@@ -11,6 +11,7 @@ using BetterLyrics.WinUI3.Providers;
 using BetterLyrics.WinUI3.Services;
 using BetterLyrics.WinUI3.Services.AlbumArtSearchService;
 using BetterLyrics.WinUI3.Services.GSMTCService;
+using BetterLyrics.WinUI3.Services.HaloPixelBar;
 using BetterLyrics.WinUI3.ViewModels;
 using BetterLyrics.WinUI3.Views;
 using CommunityToolkit.Mvvm.DependencyInjection;
@@ -235,6 +236,7 @@ namespace BetterLyrics.WinUI3
                     .AddSingleton<ILyricsCacheService, LyricsCacheService>()
                     .AddSingleton<ISongSearchMapService, SongSearchMapService>()
                     .AddSingleton<IPluginService, PluginService>()
+                    .AddSingleton<HaloPixelBarService>()
                     .AddSingleton<IFileWatchService, FileWatchService>()
                     .AddSingleton<IAppUpdateService, AppUpdateService>()
                     .AddSingleton<INavigationService, NavigationService>()
@@ -260,6 +262,7 @@ namespace BetterLyrics.WinUI3
                     .AddSingleton<StatsDashboardControlViewModel>()
                     .AddSingleton<PlayQueueViewModel>()
                     .AddSingleton<PluginManagerControlViewModel>()
+                    .AddSingleton<HaloPixelBarSettingsControlViewModel>()
                     .AddSingleton<LyricsSharePageViewModel>()
                     .AddSingleton<MusicGalleryWindowViewModel>()
                     .AddTransient<NowPlayingPageViewModel>()
