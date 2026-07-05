@@ -46,6 +46,19 @@
                         </ComboBox>
                     </controls:SettingsCard>
 
+                    <!-- 显示位置 -->
+                    <controls:SettingsCard
+                        Header="显示位置"
+                        Description="歌词在屏幕上的对齐方式"
+                        HeaderIcon="{ui:FontIcon FontFamily={StaticResource SegoeFluentIcons}, Glyph=&#xE8E4;}"
+                        Visibility="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.Enable, Mode=OneWay}">
+                        <ComboBox SelectedIndex="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.TextAlignment, Mode=TwoWay}">
+                            <ComboBoxItem Content="居中" />
+                            <ComboBoxItem Content="左对齐" />
+                            <ComboBoxItem Content="右对齐" />
+                        </ComboBox>
+                    </controls:SettingsCard>
+
                     <TextBlock Text="显示效果" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
                                Visibility="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.Enable, Mode=OneWay}" />
 

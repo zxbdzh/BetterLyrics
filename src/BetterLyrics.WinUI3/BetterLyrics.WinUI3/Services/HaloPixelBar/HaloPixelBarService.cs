@@ -172,8 +172,22 @@ public class HaloPixelBarService : BaseViewModel,
         if (message.Sender is not IGSMTCService ||
             message.PropertyName != nameof(IGSMTCService.CurrentLyricsData)) return;
 
+        var lyricsData = message.NewValue;
+
+        if (lyricsData?.LanguageCode == "N/A") return;
+
         _currentLineIndex = -1;
-        _lyricsLines = message.NewValue?.LyricsLines;
+
+        if (lyricsData?.LyricsLines is { Count: > 1 } lines)
+        {
+            _lyricsLines = lines;
+        }
+        else
+        {
+            _lyricsLines = null;
+            if (Settings.Enable)
+                SafeExecute(() => _engine?.ShowClock());
+        }
     }
 
     public void Receive(PropertyChangedMessage<bool> message)

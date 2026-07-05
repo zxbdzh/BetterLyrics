@@ -76,7 +76,7 @@ public sealed class DisplayEngine : IDisposable
         }
         else
         {
-            WriteLayout(Protocol.Layout.Center);
+            WriteLayout(GetStaticLayout());
             WriteText(text);
         }
     }
@@ -144,13 +144,13 @@ public sealed class DisplayEngine : IDisposable
             }
             else
             {
-                WriteLayout(Protocol.Layout.Center);
+                WriteLayout(GetStaticLayout());
                 WriteText(Protocol.ClipToByteBudget(text));
             }
         }
         else
         {
-            if (_settings.Typewriter && _settings.TypewriterSync && timings != null && timings.Count > 0)
+            if (_settings.TypewriterSync && timings != null && timings.Count > 0)
             {
                 StartTypewriterSync(text, timings);
             }
@@ -161,7 +161,7 @@ public sealed class DisplayEngine : IDisposable
             }
             else
             {
-                WriteLayout(Protocol.Layout.Center);
+                WriteLayout(GetStaticLayout());
                 WriteText(text);
             }
         }
@@ -169,7 +169,7 @@ public sealed class DisplayEngine : IDisposable
 
     private void StartTypewriter(string text, int speedMs, Action? onComplete)
     {
-        WriteLayout(Protocol.Layout.Left);
+        WriteLayout(GetStaticLayout());
 
         var runes = text.EnumerateRunes().ToArray();
         int total = runes.Length;
@@ -200,7 +200,7 @@ public sealed class DisplayEngine : IDisposable
 
     private void StartTypewriterSync(string text, List<CharTiming> timings)
     {
-        WriteLayout(Protocol.Layout.Left);
+        WriteLayout(GetStaticLayout());
 
         int lastVisibleCount = 0;
         string captured = text;
@@ -242,7 +242,7 @@ public sealed class DisplayEngine : IDisposable
         double halfDuration = lineDurationMs > 0 ? lineDurationMs / 2.0 : total * 80;
         int speed = Math.Max(30, (int)(halfDuration / total));
 
-        WriteLayout(Protocol.Layout.Left);
+        WriteLayout(GetStaticLayout());
 
         int index = 0;
         string captured = text;
@@ -272,7 +272,7 @@ public sealed class DisplayEngine : IDisposable
 
     private void StartMarquee(string text, double lineDurationMs)
     {
-        WriteLayout(Protocol.Layout.Center);
+        WriteLayout(GetStaticLayout());
 
         var runes = text.EnumerateRunes().ToArray();
         int runeCount = runes.Length;
@@ -367,7 +367,7 @@ public sealed class DisplayEngine : IDisposable
                 if (_lastText != captured) return;
                 showingFirst = !showingFirst;
 
-                WriteLayout(Protocol.Layout.Center);
+                WriteLayout(GetStaticLayout());
                 WriteText(showingFirst ? first : second);
 
                 try { _effectTimer?.Change(interval, Timeout.Infinite); }
@@ -408,6 +408,13 @@ public sealed class DisplayEngine : IDisposable
         int speedFromDuration = durationMs > 0 ? (int)(durationMs / charCount) : _settings.TypewriterSpeed;
         return Math.Clamp(Math.Min(_settings.TypewriterSpeed, speedFromDuration), 30, 500);
     }
+
+    private Protocol.Layout GetStaticLayout() => _settings.TextAlignment switch
+    {
+        1 => Protocol.Layout.Left,
+        2 => Protocol.Layout.Right,
+        _ => Protocol.Layout.Center
+    };
 
     private bool WriteText(string text) => EnsureOpen() && _device.Write(Protocol.BuildTextPacket(text));
 

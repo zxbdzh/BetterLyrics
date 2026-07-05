@@ -12,6 +12,7 @@ namespace BetterLyrics.Core.Models.Settings
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial int TypewriterSpeed { get; set; } = 100;
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial bool TypewriterSync { get; set; } = true;
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial int LatencyCompMs { get; set; } = 100;
+        [ObservableProperty][NotifyPropertyChangedRecipients] public partial int TextAlignment { get; set; } = 0; // 0=居中, 1=左对齐, 2=右对齐
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial bool AlternateSplit { get; set; } = true;
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial int AlternateInterval { get; set; } = 3000;
     }
