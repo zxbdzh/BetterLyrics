@@ -15,6 +15,7 @@ namespace BetterLyrics.Core.Models.Settings
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial Core.Models.Settings.AdvancedSettings AdvancedSettings { get; set; } = new Core.Models.Settings.AdvancedSettings();
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial LyricsSaveConfig LyricsSaveConfig { get; set; } = new LyricsSaveConfig();
         [ObservableProperty] public partial SystemTraySettings SystemTraySettings { get; set; } = new SystemTraySettings();
+        [ObservableProperty][NotifyPropertyChangedRecipients] public partial HaloPixelBarSettings HaloPixelBarSettings { get; set; } = new HaloPixelBarSettings();
 
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial FullyObservableCollection<Core.Models.Settings.MediaFolder> LocalMediaFolders { get; set; } = [];
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial FullyObservableCollection<MediaSourceProviderInfo> MediaSourceProvidersInfo { get; set; } = [];

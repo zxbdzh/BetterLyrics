@@ -67,6 +67,11 @@
                     <uc:PluginManagerControl />
                 </controls:Case>
 
+                <!--  Halo PixelBar  -->
+                <controls:Case Value="{x:Bind enums1:SettingsSection.HaloPixelBar}">
+                    <uc:HaloPixelBarSettingsControl />
+                </controls:Case>
+
                 <!--  About  -->
                 <controls:Case Value="{x:Bind enums1:SettingsSection.About}">
                     <uc:AboutControl />

@@ -43,6 +43,14 @@ namespace BetterLyrics.WinUI3.Services
             return info?.Plugin as T;
         }
 
+        public IEnumerable<T> GetPlugins<T>() where T : class
+        {
+            return _settingsService.AppSettings.PluginsInfo
+                .Where(p => p.IsEnabled && p.IsInitialized && p.Plugin is T)
+                .Select(p => (T)p.Plugin!)
+                .ToList();
+        }
+
         public async Task LoadPluginsAsync()
         {
             PerformFileSynchronization();

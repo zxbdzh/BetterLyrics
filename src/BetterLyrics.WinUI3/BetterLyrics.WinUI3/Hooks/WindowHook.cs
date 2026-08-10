@@ -220,6 +220,14 @@ namespace BetterLyrics.WinUI3.Hooks
 
         public static void ExitApp()
         {
+            try
+            {
+                var haloPixelBar = CommunityToolkit.Mvvm.DependencyInjection.Ioc.Default
+                    .GetService<Services.HaloPixelBar.HaloPixelBarService>();
+                haloPixelBar?.Stop();
+            }
+            catch { }
+
             EnsureAllWorkAreasReleased();
             Environment.Exit(0);
         }
