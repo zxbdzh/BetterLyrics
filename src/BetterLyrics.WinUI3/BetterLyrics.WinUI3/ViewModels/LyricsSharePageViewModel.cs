@@ -1,5 +1,6 @@
 ﻿using BetterLyrics.Core.Enums;
 using BetterLyrics.Core.Extensions;
+using BetterLyrics.Core.Helpers.Lyrics;
 using BetterLyrics.Core.Interfaces.Services;
 using BetterLyrics.Core.Models.Entities;
 using BetterLyrics.Core.Models.Lyrics;
@@ -25,6 +26,7 @@ namespace BetterLyrics.WinUI3.ViewModels
         private readonly ILocalizationService _localizationService;
         private readonly ISongSearchMapService _songSearchMapService;
         private readonly ISettingsService _settingsService;
+        private IReadOnlyList<IReadOnlyList<LyricsLine>> _lyricsPages = [];
 
         public IGSMTCService GSMTCService { get; private set; }
 
@@ -34,12 +36,33 @@ namespace BetterLyrics.WinUI3.ViewModels
         [ObservableProperty] public partial ObservableCollection<LyricsCardStyleGroup> StyleGroups { get; set; }
         [ObservableProperty] public partial LyricsCardStyleItem SelectedStyleItem { get; set; }
         [ObservableProperty] public partial int SelectedStyleDisplayTypeIndex { get; set; } = 1;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPreviousPage))]
+        [NotifyPropertyChangedFor(nameof(HasNextPage))]
+        [NotifyPropertyChangedFor(nameof(PageIndicator))]
+        public partial int CurrentPageIndex { get; set; }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPreviousPage))]
+        [NotifyPropertyChangedFor(nameof(HasNextPage))]
+        [NotifyPropertyChangedFor(nameof(IsPaginationVisible))]
+        [NotifyPropertyChangedFor(nameof(PageIndicator))]
+        public partial int PageCount { get; set; }
+
+        public bool HasPreviousPage => CurrentPageIndex > 0;
+        public bool HasNextPage => CurrentPageIndex + 1 < PageCount;
+        public bool IsPaginationVisible => PageCount > 1;
+        public string PageIndicator => PageCount == 0 ? "0 / 0" : $"{CurrentPageIndex + 1} / {PageCount}";
+        public string PreviousPageText { get; }
+        public string NextPageText { get; }
 
         public LyricsSharePageViewModel(IGSMTCService gsmtcService, ISongSearchMapService songSearchMapService, ISettingsService settingsService, ILocalizationService localizationService)
         {
             _songSearchMapService = songSearchMapService;
             _settingsService = settingsService;
             _localizationService = localizationService;
+
+            PreviousPageText = localizationService.GetLocalizedString("LyricsSharePagePreviousPage");
+            NextPageText = localizationService.GetLocalizedString("LyricsSharePageNextPage");
 
             AppSettings = settingsService.AppSettings;
             GSMTCService = gsmtcService;
@@ -139,7 +162,31 @@ namespace BetterLyrics.WinUI3.ViewModels
 
         public void UpdateSelectedLyrics(List<LyricsLine> lyrics)
         {
-            CardData.Lyrics = lyrics;
+            _lyricsPages = LyricsSharePaginator.Paginate(lyrics);
+            PageCount = _lyricsPages.Count;
+            CurrentPageIndex = 0;
+            UpdateCurrentPage();
+        }
+
+        public void PreviousPage()
+        {
+            if (!HasPreviousPage) return;
+            CurrentPageIndex--;
+            UpdateCurrentPage();
+        }
+
+        public void NextPage()
+        {
+            if (!HasNextPage) return;
+            CurrentPageIndex++;
+            UpdateCurrentPage();
+        }
+
+        private void UpdateCurrentPage()
+        {
+            CardData.Lyrics = PageCount == 0
+                ? []
+                : _lyricsPages[CurrentPageIndex].ToList();
         }
 
         private async Task RefreshCardDataAsync()
@@ -150,7 +197,7 @@ namespace BetterLyrics.WinUI3.ViewModels
             CardData.CoverImage = GSMTCService.AlbumArtBitmapImage;
             CardData.AccentCoverColor = (await GSMTCService.GetAlbumArtAccentColorsAsync(PaletteGeneratorType.Auto, true)).First();
 
-            CardData.Lyrics = [];
+            UpdateCurrentPage();
         }
 
         private void ActivateCardDataForBinding()

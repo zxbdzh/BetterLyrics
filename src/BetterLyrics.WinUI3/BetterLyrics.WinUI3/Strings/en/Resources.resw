@@ -2556,4 +2556,6 @@
   <data name="WindowSettingsControlTheme.Header" xml:space="preserve">
     <value>Window Theme</value>
   </data>
+  <data name="LyricsSharePagePreviousPage" xml:space="preserve"><value>Previous share page</value></data>
+  <data name="LyricsSharePageNextPage" xml:space="preserve"><value>Next share page</value></data>
 </root>

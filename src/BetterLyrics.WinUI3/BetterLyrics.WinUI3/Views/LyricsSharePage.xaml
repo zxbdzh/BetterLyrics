@@ -75,6 +75,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <controls:WrapPanel
@@ -123,8 +124,47 @@
                     LyricsLines="{x:Bind ViewModel.CardData.Lyrics, Mode=OneWay}"
                     StyleKey="{x:Bind ViewModel.SelectedStyleItem.StyleKey, Mode=OneWay}" />
             </Viewbox>
-            <TextBlock
+            <StackPanel
                 Grid.Row="2"
+                Margin="0,8,0,0"
+                HorizontalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8"
+                Visibility="{x:Bind ViewModel.IsPaginationVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Button
+                    Width="44"
+                    Height="44"
+                    AutomationProperties.Name="{x:Bind ViewModel.PreviousPageText, Mode=OneWay}"
+                    Click="PreviousPage_Click"
+                    IsEnabled="{x:Bind ViewModel.HasPreviousPage, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.PreviousPageText, Mode=OneWay}">
+                    <FontIcon
+                        FontFamily="{StaticResource SegoeFluentIcons}"
+                        FontSize="14"
+                        Glyph="&#xE76B;" />
+                </Button>
+                <TextBlock
+                    MinWidth="64"
+                    VerticalAlignment="Center"
+                    AutomationProperties.LiveSetting="Polite"
+                    FontFamily="Consolas"
+                    Text="{x:Bind ViewModel.PageIndicator, Mode=OneWay}"
+                    TextAlignment="Center" />
+                <Button
+                    Width="44"
+                    Height="44"
+                    AutomationProperties.Name="{x:Bind ViewModel.NextPageText, Mode=OneWay}"
+                    Click="NextPage_Click"
+                    IsEnabled="{x:Bind ViewModel.HasNextPage, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.NextPageText, Mode=OneWay}">
+                    <FontIcon
+                        FontFamily="{StaticResource SegoeFluentIcons}"
+                        FontSize="14"
+                        Glyph="&#xE76C;" />
+                </Button>
+            </StackPanel>
+            <TextBlock
+                Grid.Row="3"
                 Margin="0,6,0,0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"

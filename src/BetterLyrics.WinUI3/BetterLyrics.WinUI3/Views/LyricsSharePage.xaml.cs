@@ -38,7 +38,11 @@ namespace BetterLyrics.WinUI3.Views
             else if (selectedCount == totalCount) LyricsHostCheckBox.IsChecked = true;
             else LyricsHostCheckBox.IsChecked = null;
 
-            ViewModel.UpdateSelectedLyrics(LyricsListView.SelectedItems.Cast<LyricsLine>().ToList());
+            var selectedLyrics = LyricsListView.SelectedItems.Cast<LyricsLine>().ToHashSet();
+            ViewModel.UpdateSelectedLyrics(LyricsListView.Items
+                .Cast<LyricsLine>()
+                .Where(selectedLyrics.Contains)
+                .ToList());
         }
 
         private async void SaveImage_Click(object sender, RoutedEventArgs e)
@@ -50,9 +54,12 @@ namespace BetterLyrics.WinUI3.Views
                 using (var memoryStream =
                        await RenderToStreamAsync(PreviewCard, ImageQualitySlider.Value / 100.0 * 4.0))
                 {
+                    var pageSuffix = ViewModel.PageCount > 1
+                        ? $"_p{ViewModel.CurrentPageIndex + 1}-of-{ViewModel.PageCount}"
+                        : "";
                     StorageFile? file = await PickerHelper.PickSaveFileAsync<LyricsShareWindow>(
                         new Dictionary<string, IList<string>> { { "PNG Image", new List<string> { ".png" } } },
-                        $"BetterLyrics_{ViewModel.SelectedStyleItem.StyleKey}_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png"
+                        $"BetterLyrics_{ViewModel.SelectedStyleItem.StyleKey}{pageSuffix}_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png"
                     );
 
                     if (file != null)
@@ -167,6 +174,16 @@ namespace BetterLyrics.WinUI3.Views
             {
                 LyricsListView.SelectedItems.Clear();
             }
+        }
+
+        private void PreviousPage_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.PreviousPage();
+        }
+
+        private void NextPage_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.NextPage();
         }
     }
 }
