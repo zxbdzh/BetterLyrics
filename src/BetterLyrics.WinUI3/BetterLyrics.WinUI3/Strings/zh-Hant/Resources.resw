@@ -2556,4 +2556,29 @@
   <data name="WindowSettingsControlTheme.Header" xml:space="preserve">
     <value>視窗主題</value>
   </data>
+  <data name="LyricsSharePagePreviousPage" xml:space="preserve"><value>上一張分享頁</value></data>
+  <data name="LyricsSharePageNextPage" xml:space="preserve"><value>下一張分享頁</value></data>
+  <data name="LyricsSharePageSaveAllPages.Text" xml:space="preserve"><value>儲存全部頁面</value></data>
+  <data name="LyricsSharePageSavePageRange.Text" xml:space="preserve"><value>儲存頁碼範圍</value></data>
+  <data name="LyricsSharePageCancelExport.Content" xml:space="preserve"><value>取消匯出</value></data>
+  <data name="LyricsSharePagePageCountFormat" xml:space="preserve"><value>共 {0} 頁</value></data>
+  <data name="LyricsSharePagePageIndicatorFormat" xml:space="preserve"><value>第 {0} 頁，共 {1} 頁</value></data>
+  <data name="LyricsSharePagePageJumpAutomationFormat" xml:space="preserve"><value>頁碼，目前第 {0} 頁，共 {1} 頁。</value></data>
+  <data name="LyricsSharePageProcessingImage" xml:space="preserve"><value>正在產生圖片</value></data>
+  <data name="LyricsSharePageExportingPageFormat" xml:space="preserve"><value>正在儲存第 {0} 頁，共 {1} 頁</value></data>
+  <data name="LyricsSharePageExportProgressAutomationFormat" xml:space="preserve"><value>已處理 {0}/{1} 個匯出工作</value></data>
+  <data name="LyricsSharePageCancelingExport" xml:space="preserve"><value>正在取消匯出</value></data>
+  <data name="LyricsSharePageExportCanceledFormat" xml:space="preserve"><value>匯出已取消，已儲存 {0}/{1} 頁。</value></data>
+  <data name="LyricsSharePageExportSuccessFormat" xml:space="preserve"><value>已將 {0} 頁儲存到 {1}。</value></data>
+  <data name="LyricsSharePageExportPartialFormat" xml:space="preserve"><value>已將 {0}/{1} 頁儲存到 {2}，失敗頁面未被變更。</value></data>
+  <data name="LyricsSharePageExportRangeTitle" xml:space="preserve"><value>儲存頁碼範圍</value></data>
+  <data name="LyricsSharePageExportRangeStart" xml:space="preserve"><value>起始頁</value></data>
+  <data name="LyricsSharePageExportRangeEnd" xml:space="preserve"><value>結束頁</value></data>
+  <data name="LyricsSharePageExportRangeConfirm" xml:space="preserve"><value>選擇資料夾並儲存</value></data>
+  <data name="LyricsSharePageExportRangeInvalidFormat" xml:space="preserve"><value>請輸入 1 到 {0} 之間的整數頁碼，且起始頁不得大於結束頁。</value></data>
+  <data name="LyricsSharePageExportFailedTitle" xml:space="preserve"><value>部分頁面未儲存</value></data>
+  <data name="LyricsSharePageExportFailedSummaryFormat" xml:space="preserve"><value>有 {0} 頁儲存失敗（第 {1} 頁）。已完成的檔案保留在 {2}。第一個錯誤：{3}</value></data>
+  <data name="LyricsSharePageExportRetry" xml:space="preserve"><value>重試失敗頁面</value></data>
+  <data name="LyricsSharePageExportFinish" xml:space="preserve"><value>完成</value></data>
+  <data name="LyricsSharePageExportPageUnavailable" xml:space="preserve"><value>要求的分享頁面已不存在，請重新整理選取內容後再試一次。</value></data>
 </root>

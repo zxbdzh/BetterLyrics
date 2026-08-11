@@ -2558,4 +2558,27 @@
   </data>
   <data name="LyricsSharePagePreviousPage" xml:space="preserve"><value>Previous share page</value></data>
   <data name="LyricsSharePageNextPage" xml:space="preserve"><value>Next share page</value></data>
+  <data name="LyricsSharePageSaveAllPages.Text" xml:space="preserve"><value>Save all pages</value></data>
+  <data name="LyricsSharePageSavePageRange.Text" xml:space="preserve"><value>Save page range</value></data>
+  <data name="LyricsSharePageCancelExport.Content" xml:space="preserve"><value>Cancel export</value></data>
+  <data name="LyricsSharePagePageCountFormat" xml:space="preserve"><value>of {0}</value></data>
+  <data name="LyricsSharePagePageIndicatorFormat" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="LyricsSharePagePageJumpAutomationFormat" xml:space="preserve"><value>Page number. Current page {0} of {1}.</value></data>
+  <data name="LyricsSharePageProcessingImage" xml:space="preserve"><value>Preparing image</value></data>
+  <data name="LyricsSharePageExportingPageFormat" xml:space="preserve"><value>Saving page {0} of {1}</value></data>
+  <data name="LyricsSharePageExportProgressAutomationFormat" xml:space="preserve"><value>{0} of {1} export tasks processed</value></data>
+  <data name="LyricsSharePageCancelingExport" xml:space="preserve"><value>Canceling export</value></data>
+  <data name="LyricsSharePageExportCanceledFormat" xml:space="preserve"><value>Export canceled. {0} of {1} pages were saved.</value></data>
+  <data name="LyricsSharePageExportSuccessFormat" xml:space="preserve"><value>{0} page(s) saved to {1}.</value></data>
+  <data name="LyricsSharePageExportPartialFormat" xml:space="preserve"><value>{0} of {1} pages were saved to {2}. Failed pages were left unchanged.</value></data>
+  <data name="LyricsSharePageExportRangeTitle" xml:space="preserve"><value>Save page range</value></data>
+  <data name="LyricsSharePageExportRangeStart" xml:space="preserve"><value>First page</value></data>
+  <data name="LyricsSharePageExportRangeEnd" xml:space="preserve"><value>Last page</value></data>
+  <data name="LyricsSharePageExportRangeConfirm" xml:space="preserve"><value>Choose folder and save</value></data>
+  <data name="LyricsSharePageExportRangeInvalidFormat" xml:space="preserve"><value>Enter whole-number pages from 1 to {0}, with the first page no greater than the last.</value></data>
+  <data name="LyricsSharePageExportFailedTitle" xml:space="preserve"><value>Some pages were not saved</value></data>
+  <data name="LyricsSharePageExportFailedSummaryFormat" xml:space="preserve"><value>{0} page(s) could not be saved (pages {1}). Completed files remain in {2}. First error: {3}</value></data>
+  <data name="LyricsSharePageExportRetry" xml:space="preserve"><value>Retry failed pages</value></data>
+  <data name="LyricsSharePageExportFinish" xml:space="preserve"><value>Finish</value></data>
+  <data name="LyricsSharePageExportPageUnavailable" xml:space="preserve"><value>The requested share page is no longer available. Refresh the selection and try again.</value></data>
 </root>

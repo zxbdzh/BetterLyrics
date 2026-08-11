@@ -15,7 +15,8 @@
     xmlns:uc="using:BetterLyrics.WinUI3.Controls"
     xmlns:ui="using:CommunityToolkit.WinUI"
     xmlns:viewmodels="using:BetterLyrics.WinUI3.ViewModels"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Unloaded="LyricsSharePage_Unloaded">
 
     <Page.Resources>
         <CollectionViewSource
@@ -31,41 +32,45 @@
             <ColumnDefinition x:Name="RightColDef" />
         </Grid.ColumnDefinitions>
 
-        <Grid
+        <ContentControl
+            x:Name="LyricsSelectionRegion"
             Grid.Column="0"
-            Padding="24"
-            RowSpacing="12">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <TextBlock x:Uid="LyricsSharePageSelectLyricsTitle" Style="{ThemeResource SubtitleTextBlockStyle}" />
-                <CheckBox
-                    x:Name="LyricsHostCheckBox"
-                    Click="LyricsHostCheckBox_Click"
-                    IsThreeState="True" />
-            </StackPanel>
-            <ListView
-                x:Name="LyricsListView"
-                Grid.Row="1"
-                ItemsSource="{x:Bind ViewModel.GSMTCService.CurrentLyricsData.LyricsLines, Mode=OneWay}"
-                SelectionChanged="LyricsListView_SelectionChanged"
-                SelectionMode="Multiple">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="lyrics:LyricsLine">
-                        <StackPanel Padding="0,8" Spacing="2">
-                            <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
-                            <TextBlock
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind SecondaryText}"
-                                TextWrapping="Wrap"
-                                Visibility="{x:Bind SecondaryText, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-        </Grid>
+            HorizontalContentAlignment="Stretch"
+            IsTabStop="False"
+            VerticalContentAlignment="Stretch">
+            <Grid Padding="24" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Uid="LyricsSharePageSelectLyricsTitle" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                    <CheckBox
+                        x:Name="LyricsHostCheckBox"
+                        Click="LyricsHostCheckBox_Click"
+                        IsThreeState="True" />
+                </StackPanel>
+                <ListView
+                    x:Name="LyricsListView"
+                    Grid.Row="1"
+                    ItemsSource="{x:Bind ViewModel.GSMTCService.CurrentLyricsData.LyricsLines, Mode=OneWay}"
+                    SelectionChanged="LyricsListView_SelectionChanged"
+                    SelectionMode="Multiple">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="lyrics:LyricsLine">
+                            <StackPanel Padding="0,8" Spacing="2">
+                                <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{x:Bind SecondaryText}"
+                                    TextWrapping="Wrap"
+                                    Visibility="{x:Bind SecondaryText, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </ContentControl>
 
         <Grid
             Grid.Column="1"
@@ -78,91 +83,135 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <controls:WrapPanel
+            <ContentControl
+                x:Name="PreviewToolbar"
                 Grid.Row="0"
-                Margin="0,0,0,16"
-                HorizontalSpacing="6"
-                VerticalSpacing="6">
-                <DropDownButton>
-                    <DropDownButton.Content>
-                        <TextBlock x:Uid="LyricsSharePageFontFamily" />
-                    </DropDownButton.Content>
-                    <DropDownButton.Flyout>
-                        <Flyout FlyoutPresenterStyle="{StaticResource FlyoutGhostStyle}">
-                            <uc:FontPicker MaxWidth="400" SelectedFontId="{x:Bind ViewModel.CardConfig.FontFamily, Mode=TwoWay}" />
-                        </Flyout>
-                    </DropDownButton.Flyout>
-                </DropDownButton>
+                HorizontalContentAlignment="Stretch"
+                IsTabStop="False">
+                <controls:WrapPanel
+                    Margin="0,0,0,16"
+                    HorizontalSpacing="6"
+                    VerticalSpacing="6">
+                    <DropDownButton>
+                        <DropDownButton.Content>
+                            <TextBlock x:Uid="LyricsSharePageFontFamily" />
+                        </DropDownButton.Content>
+                        <DropDownButton.Flyout>
+                            <Flyout FlyoutPresenterStyle="{StaticResource FlyoutGhostStyle}">
+                                <uc:FontPicker MaxWidth="400" SelectedFontId="{x:Bind ViewModel.CardConfig.FontFamily, Mode=TwoWay}" />
+                            </Flyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
 
-                <DropDownButton>
-                    <DropDownButton.Content>
-                        <TextBlock x:Uid="LyricsSharePageImageQuality" />
-                    </DropDownButton.Content>
-                    <DropDownButton.Flyout>
-                        <Flyout>
-                            <uc:ExtendedSlider
-                                x:Name="ImageQualitySlider"
-                                Default="100"
-                                Frequency="1"
-                                Maximum="100"
-                                Minimum="10"
-                                Unit="%"
-                                Value="100" />
-                        </Flyout>
-                    </DropDownButton.Flyout>
-                </DropDownButton>
-
-            </controls:WrapPanel>
+                    <DropDownButton>
+                        <DropDownButton.Content>
+                            <TextBlock x:Uid="LyricsSharePageImageQuality" />
+                        </DropDownButton.Content>
+                        <DropDownButton.Flyout>
+                            <Flyout>
+                                <uc:ExtendedSlider
+                                    x:Name="ImageQualitySlider"
+                                    Default="100"
+                                    Frequency="1"
+                                    Maximum="100"
+                                    Minimum="10"
+                                    Unit="%"
+                                    Value="100" />
+                            </Flyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
+                </controls:WrapPanel>
+            </ContentControl>
 
             <Viewbox x:Name="PreviewCardContainer" Grid.Row="1">
-                <uc:LyricsCard
-                    x:Name="PreviewCard"
-                    Title="{x:Bind ViewModel.CardData.Title, Mode=OneWay}"
-                    Artist="{x:Bind ViewModel.CardData.Artist, Mode=OneWay}"
-                    CoverAccentColor="{x:Bind ViewModel.CardData.AccentCoverColor, Converter={StaticResource AppColorToColorConverter}, Mode=OneWay}"
-                    CoverImage="{x:Bind ViewModel.CardData.CoverImage, Mode=OneWay}"
-                    LyricsLines="{x:Bind ViewModel.CardData.Lyrics, Mode=OneWay}"
-                    StyleKey="{x:Bind ViewModel.SelectedStyleItem.StyleKey, Mode=OneWay}" />
+                <Grid
+                    x:Name="ExportCard"
+                    AutomationProperties.Name="{x:Bind ViewModel.PageIndicator, Mode=OneWay}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <uc:LyricsCard
+                        x:Name="PreviewCard"
+                        Title="{x:Bind ViewModel.CardData.Title, Mode=OneWay}"
+                        Artist="{x:Bind ViewModel.CardData.Artist, Mode=OneWay}"
+                        CoverAccentColor="{x:Bind ViewModel.CardData.AccentCoverColor, Converter={StaticResource AppColorToColorConverter}, Mode=OneWay}"
+                        CoverImage="{x:Bind ViewModel.CardData.CoverImage, Mode=OneWay}"
+                        LyricsLines="{x:Bind ViewModel.CardData.Lyrics, Mode=OneWay}"
+                        StyleKey="{x:Bind ViewModel.SelectedStyleItem.StyleKey, Mode=OneWay}" />
+                    <Border
+                        Grid.Row="1"
+                        MinHeight="32"
+                        Padding="12,6"
+                        Background="#E61B1B1B"
+                        IsHitTestVisible="False"
+                        Visibility="{x:Bind ViewModel.IsPaginationVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="White"
+                            Text="{x:Bind ViewModel.PageIndicator, Mode=OneWay}" />
+                    </Border>
+                </Grid>
             </Viewbox>
-            <StackPanel
+            <ContentControl
+                x:Name="PaginationControls"
                 Grid.Row="2"
-                Margin="0,8,0,0"
                 HorizontalAlignment="Center"
-                Orientation="Horizontal"
-                Spacing="8"
+                IsTabStop="False"
                 Visibility="{x:Bind ViewModel.IsPaginationVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Button
-                    Width="44"
-                    Height="44"
-                    AutomationProperties.Name="{x:Bind ViewModel.PreviousPageText, Mode=OneWay}"
-                    Click="PreviousPage_Click"
-                    IsEnabled="{x:Bind ViewModel.HasPreviousPage, Mode=OneWay}"
-                    ToolTipService.ToolTip="{x:Bind ViewModel.PreviousPageText, Mode=OneWay}">
-                    <FontIcon
-                        FontFamily="{StaticResource SegoeFluentIcons}"
-                        FontSize="14"
-                        Glyph="&#xE76B;" />
-                </Button>
-                <TextBlock
-                    MinWidth="64"
-                    VerticalAlignment="Center"
-                    AutomationProperties.LiveSetting="Polite"
-                    FontFamily="Consolas"
-                    Text="{x:Bind ViewModel.PageIndicator, Mode=OneWay}"
-                    TextAlignment="Center" />
-                <Button
-                    Width="44"
-                    Height="44"
-                    AutomationProperties.Name="{x:Bind ViewModel.NextPageText, Mode=OneWay}"
-                    Click="NextPage_Click"
-                    IsEnabled="{x:Bind ViewModel.HasNextPage, Mode=OneWay}"
-                    ToolTipService.ToolTip="{x:Bind ViewModel.NextPageText, Mode=OneWay}">
-                    <FontIcon
-                        FontFamily="{StaticResource SegoeFluentIcons}"
-                        FontSize="14"
-                        Glyph="&#xE76C;" />
-                </Button>
-            </StackPanel>
+                <StackPanel
+                    Margin="0,8,0,0"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <Button
+                        Width="44"
+                        Height="44"
+                        AutomationProperties.Name="{x:Bind ViewModel.PreviousPageText, Mode=OneWay}"
+                        Click="PreviousPage_Click"
+                        IsEnabled="{x:Bind ViewModel.HasPreviousPage, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.PreviousPageText, Mode=OneWay}">
+                        <FontIcon
+                            FontFamily="{StaticResource SegoeFluentIcons}"
+                            FontSize="14"
+                            Glyph="&#xE76B;" />
+                    </Button>
+                    <NumberBox
+                        x:Name="PageNumberBox"
+                        Width="76"
+                        Height="44"
+                        AutomationProperties.HelpText="{x:Bind ViewModel.PageIndicator, Mode=OneWay}"
+                        AutomationProperties.LiveSetting="Polite"
+                        AutomationProperties.Name="{x:Bind ViewModel.PageJumpAutomationText, Mode=OneWay}"
+                        Maximum="{x:Bind ViewModel.MaximumPageNumber, Mode=OneWay}"
+                        Minimum="1"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Compact"
+                        ValidationMode="InvalidInputOverwritten"
+                        Value="{x:Bind ViewModel.CurrentPageNumber, Mode=OneWay}"
+                        ValueChanged="PageNumberBox_ValueChanged" />
+                    <TextBlock
+                        MinWidth="56"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="{x:Bind ViewModel.PageIndicator, Mode=OneWay}"
+                        FontFamily="Consolas"
+                        Text="{x:Bind ViewModel.PageCountIndicator, Mode=OneWay}"
+                        TextAlignment="Center" />
+                    <Button
+                        Width="44"
+                        Height="44"
+                        AutomationProperties.Name="{x:Bind ViewModel.NextPageText, Mode=OneWay}"
+                        Click="NextPage_Click"
+                        IsEnabled="{x:Bind ViewModel.HasNextPage, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.NextPageText, Mode=OneWay}">
+                        <FontIcon
+                            FontFamily="{StaticResource SegoeFluentIcons}"
+                            FontSize="14"
+                            Glyph="&#xE76C;" />
+                    </Button>
+                </StackPanel>
+            </ContentControl>
             <TextBlock
                 Grid.Row="3"
                 Margin="0,6,0,0"
@@ -173,15 +222,18 @@
                 Text="{x:Bind ViewModel.SelectedStyleItem.DisplayText, Mode=OneWay}" />
         </Grid>
 
-        <Grid
+        <ContentControl
+            x:Name="StyleSelectionRegion"
             Grid.Column="2"
-            Padding="24"
-            RowSpacing="12">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+            HorizontalContentAlignment="Stretch"
+            IsTabStop="False"
+            VerticalContentAlignment="Stretch">
+            <Grid Padding="24" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
             <TextBlock
                 x:Uid="LyricsSharePageStyleTitle"
@@ -350,25 +402,79 @@
 
             <Grid Grid.Row="2">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button
+                    <SplitButton
+                        x:Name="SaveImageButton"
                         x:Uid="LyricsSharePageSaveImage"
                         Click="SaveImage_Click"
-                        Style="{ThemeResource AccentButtonStyle}" />
-                    <Button x:Uid="LyricsSharePageCopyImage" Click="CopyImage_Click" />
+                        Style="{ThemeResource AccentSplitButtonStyle}">
+                        <SplitButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem
+                                    x:Uid="LyricsSharePageSaveAllPages"
+                                    Click="SaveAllPages_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon FontFamily="{StaticResource SegoeFluentIcons}" Glyph="&#xE838;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem
+                                    x:Uid="LyricsSharePageSavePageRange"
+                                    Click="SavePageRange_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon FontFamily="{StaticResource SegoeFluentIcons}" Glyph="&#xE8EF;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+                    <Button
+                        x:Name="CopyImageButton"
+                        x:Uid="LyricsSharePageCopyImage"
+                        Click="CopyImage_Click" />
                 </StackPanel>
             </Grid>
-        </Grid>
+            </Grid>
+        </ContentControl>
 
         <Grid
             x:Name="ProcessingOverlay"
             Grid.ColumnSpan="3"
             Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
             Opacity="0"
+            TabFocusNavigation="Cycle"
             Visibility="Collapsed">
             <Grid.OpacityTransition>
                 <ScalarTransition />
             </Grid.OpacityTransition>
-            <ProgressRing />
+            <StackPanel
+                Width="360"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="12">
+                <ProgressRing
+                    x:Name="ProcessingRing"
+                    HorizontalAlignment="Center"
+                    IsActive="True" />
+                <ProgressBar
+                    x:Name="ExportProgressBar"
+                    AutomationProperties.Name="{x:Bind ViewModel.PageIndicator, Mode=OneWay}"
+                    Maximum="1"
+                    Minimum="0"
+                    Visibility="Collapsed" />
+                <TextBlock
+                    x:Name="ProcessingStatusText"
+                    HorizontalAlignment="Center"
+                    AutomationProperties.LiveSetting="Polite"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+                <Button
+                    x:Name="CancelExportButton"
+                    x:Uid="LyricsSharePageCancelExport"
+                    MinWidth="120"
+                    Height="44"
+                    HorizontalAlignment="Center"
+                    Click="CancelExport_Click"
+                    Visibility="Collapsed" />
+            </StackPanel>
         </Grid>
 
     </Grid>
