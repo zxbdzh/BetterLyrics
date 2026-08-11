@@ -64,6 +64,10 @@ namespace BetterLyrics.Core.Helpers.Lyrics.ContentParser
 
             EnsureSyllables(lyricsSearchResult?.Duration);
             EnsureEndMs(lyricsSearchResult?.Duration);
+            foreach (var line in _lyricsDataArr.SelectMany(data => data.LyricsLines))
+            {
+                line.RebuildPrimaryChars();
+            }
 
             return _lyricsDataArr;
         }

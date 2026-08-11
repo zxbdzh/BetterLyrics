@@ -23,6 +23,7 @@ namespace BetterLyrics.Core.Extensions
                             PrimaryText = loadingText,
                             PrimarySyllables = [new BaseLyrics { Text = loadingText, StartMs = 0, EndMs = (int)TimeSpan.FromSeconds(30).TotalMilliseconds }],
                             IsPrimaryHasRealSyllableInfo = true,
+                            IsShareable = false,
                         },
                     ],
                     LanguageCode = "N/A",
@@ -39,6 +40,7 @@ namespace BetterLyrics.Core.Extensions
                     EndMs = (int)TimeSpan.FromMinutes(99).TotalMilliseconds,
                     PrimaryText = notFoundText,
                     PrimarySyllables = [new BaseLyrics { Text = notFoundText, StartMs = 0, EndMs = (int)TimeSpan.FromMinutes(99).TotalMilliseconds }],
+                    IsShareable = false,
                 }]);
             }
 

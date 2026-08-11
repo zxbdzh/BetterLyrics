@@ -98,6 +98,7 @@ namespace BetterLyrics.Core.Helpers.Lyrics
                     EndMs = line.EndMs,
                     AgentId = line.AgentId,
                     IsPrimaryHasRealSyllableInfo = false,
+                    IsShareable = line.IsShareable,
                     PrimaryText = part.Primary,
                     SecondaryText = part.Secondary,
                     TertiaryText = string.Empty,

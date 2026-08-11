@@ -3,6 +3,7 @@ using BetterLyrics.Core.Models.Entities;
 using BetterLyrics.Core.Models.Http;
 using BetterLyrics.Core.Models.Memory;
 using BetterLyrics.Core.Models.Settings;
+using BetterLyrics.Core.Models.Podcast;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -16,6 +17,8 @@ namespace BetterLyrics.Core.Serialization
     [JsonSerializable(typeof(Dictionary<string, object>))]
     [JsonSerializable(typeof(MemoryReaderConfig))]
     [JsonSerializable(typeof(LayoutProfile))]
+    [JsonSerializable(typeof(PodcastTranscriptDescriptor))]
+    [JsonSerializable(typeof(PodcastTranscriptDelta))]
     [JsonSourceGenerationOptions(WriteIndented = true)]
     public partial class SourceGenerationContext : JsonSerializerContext { }
 }

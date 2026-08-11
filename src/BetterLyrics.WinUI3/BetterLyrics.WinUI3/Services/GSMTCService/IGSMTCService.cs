@@ -41,6 +41,8 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
         TimeSpan CurrentPosition { get; }
         LyricsData? CurrentLyricsData { get; }
 
+        bool IsPodcast { get; }
+
         BitmapImage? AlbumArtBitmapImage { get; }
         byte[]? AlbumArtBytes { get; }
 

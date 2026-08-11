@@ -1,6 +1,7 @@
 ﻿// 2025/6/23 by Zhe Fang
 
 using BetterLyrics.Core.Collections;
+using BetterLyrics.Core.Constants;
 using BetterLyrics.Core.Enums;
 using BetterLyrics.Core.Extensions;
 using BetterLyrics.Core.Helpers;
@@ -31,6 +32,8 @@ namespace BetterLyrics.WinUI3.Services
             _localizationService = localizationService;
 
             AppSettings = ReadAppSettings();
+            AppSettings.GeneralSettings.LXMusicServer = LXMusic.ResolveServer(
+                AppSettings.GeneralSettings.LXMusicServer);
 
             AppSettings.PropertyChanged += AppSettings_PropertyChanged;
 

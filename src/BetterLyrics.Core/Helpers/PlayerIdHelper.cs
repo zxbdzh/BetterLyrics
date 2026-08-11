@@ -31,6 +31,7 @@ namespace BetterLyrics.Core.Helpers
         [
             "cn.toside.music.desktop",
             "lx-music-desktop.exe",
+            "(?i)(?:^|[\\\\/])ikun-music-desktop(?:\\.exe)?$",
         ];
 
         private static bool Is(string? id, List<string> regexes)

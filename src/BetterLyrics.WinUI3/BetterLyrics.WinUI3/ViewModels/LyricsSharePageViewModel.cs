@@ -41,6 +41,7 @@ namespace BetterLyrics.WinUI3.ViewModels
     public partial class LyricsSharePageViewModel : BaseViewModel,
         IRecipient<PropertyChangedMessage<BitmapImage?>>,
         IRecipient<PropertyChangedMessage<SongInfo>>,
+        IRecipient<PropertyChangedMessage<LyricsData?>>,
         IRecipient<PropertyChangedMessage<MappedSongSearchQuery?>>
     {
         private readonly ILocalizationService _localizationService;
@@ -101,6 +102,10 @@ namespace BetterLyrics.WinUI3.ViewModels
             PageCount);
         public string PreviousPageText { get; }
         public string NextPageText { get; }
+        public IReadOnlyList<LyricsLine> ShareableLyricsLines =>
+            GSMTCService.CurrentLyricsData?.LyricsLines
+                .Where(line => line.IsShareable)
+                .ToList() ?? [];
 
         public LyricsSharePageViewModel(IGSMTCService gsmtcService, ISongSearchMapService songSearchMapService, ISettingsService settingsService, ILocalizationService localizationService)
         {
@@ -417,6 +422,7 @@ namespace BetterLyrics.WinUI3.ViewModels
                 EndMs = line.EndMs,
                 AgentId = line.AgentId,
                 IsPrimaryHasRealSyllableInfo = line.IsPrimaryHasRealSyllableInfo,
+                IsShareable = line.IsShareable,
                 PrimaryText = line.PrimaryText,
                 SecondaryText = line.SecondaryText,
                 TertiaryText = line.TertiaryText,
@@ -483,6 +489,15 @@ namespace BetterLyrics.WinUI3.ViewModels
                 message.PropertyName == nameof(IGSMTCService.CurrentSongInfo))
             {
                 _ = RefreshCardDataAsync();
+            }
+        }
+
+        public void Receive(PropertyChangedMessage<LyricsData?> message)
+        {
+            if (message.Sender is IGSMTCService &&
+                message.PropertyName == nameof(IGSMTCService.CurrentLyricsData))
+            {
+                OnPropertyChanged(nameof(ShareableLyricsLines));
             }
         }
 

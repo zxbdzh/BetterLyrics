@@ -9,6 +9,8 @@ using BetterLyrics.Core.Interfaces.Services;
 using BetterLyrics.Core.Models;
 using BetterLyrics.Core.Models.Memory;
 using BetterLyrics.Core.Models.Settings;
+using BetterLyrics.Core.Models.Podcast;
+using BetterLyrics.Core.Implementations.Services;
 using BetterLyrics.Core.ViewModels;
 using BetterLyrics.WinUI3.Helper;
 using BetterLyrics.WinUI3.Hooks;
@@ -43,6 +45,10 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
         IRecipient<PropertyChangedMessage<ChineseConversion>>
     {
         private EventSourceReader? _lxMusicSse = null;
+        private readonly PodcastTranscriptBridge _podcastTranscriptBridge = new();
+        private PodcastTranscriptDescriptor? _podcastTranscriptDescriptor = null;
+        private string _podcastContentId = "";
+        private TaskCompletionSource? _lxMediaKindSignal;
         private UniversalMemoryReader? _memoryReader = null;
 
         private readonly MediaManager _mediaManager = new();
@@ -73,6 +79,7 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial bool CurrentIsPlaying { get; private set; } = false;
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial TimeSpan CurrentPosition { get; private set; } = TimeSpan.Zero;
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial SongInfo CurrentSongInfo { get; private set; } = SongInfoExtensions.Placeholder;
+        [ObservableProperty][NotifyPropertyChangedRecipients] public partial bool IsPodcast { get; private set; } = false;
 
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial MediaSourceProviderInfo? CurrentMediaSourceProviderInfo { get; set; }
 
@@ -366,8 +373,6 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                 .FirstOrDefault(x => x.StartsWith(ExtendedGenreFiled.FileName))?
                 .Replace(ExtendedGenreFiled.FileName, "");
 
-            HandleLXMusicIfDetected(sessionId);
-
             // 总是先回收 _memoryReader
             _memoryReader?.OnProgressChanged -= UniversalMemoryReader_OnProgressChanged;
             _memoryReader?.Dispose();
@@ -411,6 +416,8 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                     LinkedFileName = linkedFileName,
                     StartedAt = DateTime.Now.ToBinary(),
                 };
+
+                HandleLXMusicIfDetected(sessionId);
 
                 UpdateTargetScrobbledDuration();
                 IsScrobbled = false;
@@ -522,6 +529,7 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
         {
             if (PlayerIdHelper.IsLXMusic(sessionId))
             {
+                _lxMediaKindSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 StartLXMusicSSE();
             }
             else
@@ -539,18 +547,27 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
 
             try
             {
-                _lxMusicSse = new EventSourceReader(new Uri($"{_settingsService.AppSettings.GeneralSettings.LXMusicServer}{LXMusic.QuerySuffix}")).Start();
-                _lxMusicSse.MessageReceived += LXMusicSse_MessageReceived;
-                _lxMusicSse.Disconnected += LXMusicSse_Disconnected;
+                var subscriptionUri = LXMusic.GetSubscriptionUri(
+                    _settingsService.AppSettings.GeneralSettings.LXMusicServer);
+                var reader = new EventSourceReader(subscriptionUri);
+                reader.MessageReceived += LXMusicSse_MessageReceived;
+                reader.Disconnected += LXMusicSse_Disconnected;
+                _lxMusicSse = reader;
+                reader.Start();
+                _logger.LogInformation("LX Music SSE started: {Uri}", subscriptionUri);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "StartLXMusicSSE");
-                AppUIThread.Execute(() =>
-                {
-                    GlobalToastManager.Show("FailToStartLXMusicServer", null, MessageSeverity.Error);
-                });
                 StopLXMusicSSE();
+                AppUIThread.RunAsync(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    if (PlayerIdHelper.IsLXMusic(CurrentSongInfo.PlayerId) && _lxMusicSse == null)
+                    {
+                        StartLXMusicSSE();
+                    }
+                });
             }
         }
 
@@ -563,10 +580,32 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                 _lxMusicSse.Dispose();
                 _lxMusicSse = null;
             }
+            ResetPodcastState();
+        }
+
+        private void ResetPodcastState()
+        {
+            CancelPodcastLyricsRefresh();
+            _podcastContentId = "";
+            _podcastTranscriptDescriptor = null;
+            _podcastTranscriptBridge.Reset();
+            _lxMediaKindSignal = null;
+            IsPodcast = false;
+        }
+
+        private void ActivatePodcastState()
+        {
+            IsPodcast = true;
+            CurrentPosition = TimeSpan.FromSeconds(_lxMusicPositionSeconds);
+            _lxMediaKindSignal?.TrySetResult();
         }
 
         private void LXMusicSse_Disconnected(object sender, DisconnectEventArgs e)
         {
+            if (IsPodcast && !_podcastTranscriptBridge.HasLines)
+            {
+                CurrentLyricsData = PodcastTranscriptBridge.WaitingForConnection();
+            }
             AppUIThread.RunAsync(async () =>
             {
                 await Task.Delay(e.ReconnectDelay);
@@ -581,6 +620,40 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                 if (PlayerIdHelper.IsLXMusic(CurrentSongInfo.PlayerId))
                 {
                     var data = JsonSerializer.Deserialize(e.Message, Core.Serialization.SourceGenerationContext.Default.JsonElement);
+                    if (e.Event == "transcript")
+                    {
+                        var nextDescriptor = data.ValueKind == JsonValueKind.Null
+                            ? null
+                            : JsonSerializer.Deserialize(
+                                e.Message,
+                                Core.Serialization.SourceGenerationContext.Default.PodcastTranscriptDescriptor);
+                        var contentChanged = nextDescriptor != null &&
+                            !string.Equals(
+                                _podcastContentId,
+                                nextDescriptor.ContentId,
+                                StringComparison.Ordinal);
+                        if (contentChanged)
+                        {
+                            CancelPodcastLyricsRefresh();
+                            _podcastContentId = nextDescriptor!.ContentId;
+                            _podcastTranscriptBridge.Reset();
+                        }
+                        var descriptorChanged = !PodcastTranscriptDescriptorEquals(
+                            _podcastTranscriptDescriptor,
+                            nextDescriptor);
+                        _podcastTranscriptDescriptor = nextDescriptor;
+                        if (_podcastTranscriptDescriptor == null)
+                        {
+                            if (descriptorChanged) _podcastTranscriptBridge.Reset();
+                        }
+                        else
+                        {
+                            _podcastContentId = _podcastTranscriptDescriptor.ContentId;
+                            ActivatePodcastState();
+                        }
+                        if (descriptorChanged) UpdateLyrics();
+                        return;
+                    }
                     if (data.ValueKind == JsonValueKind.Number)
                     {
                         if (e.Event == "progress")
@@ -593,7 +666,7 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                             UpdateDiscordPresence();
                         }
 
-                        if (IsMediaSourceTimelineSyncEnabled(CurrentSongInfo.PlayerId))
+                        if (IsPodcast || IsMediaSourceTimelineSyncEnabled(CurrentSongInfo.PlayerId))
                         {
                             CurrentPosition = TimeSpan.FromSeconds(_lxMusicPositionSeconds);
                         }
@@ -618,10 +691,41 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                                 UpdateAlbumArt();
                             }
                         }
+                        else if (e.Event == "mediaKind")
+                        {
+                            if (data.GetString() == "podcast") ActivatePodcastState();
+                            else ResetPodcastState();
+                        }
+                        else if (e.Event == "contentId")
+                        {
+                            var contentId = data.GetString() ?? "";
+                            if (!string.IsNullOrWhiteSpace(contentId))
+                            {
+                                ActivatePodcastState();
+                            }
+                            if (!string.Equals(_podcastContentId, contentId, StringComparison.Ordinal))
+                            {
+                                CancelPodcastLyricsRefresh();
+                                _podcastContentId = contentId;
+                                _podcastTranscriptDescriptor = null;
+                                _podcastTranscriptBridge.Reset();
+                            }
+                        }
                     }
                 }
             });
         }
+
+        private static bool PodcastTranscriptDescriptorEquals(
+            Core.Models.Podcast.PodcastTranscriptDescriptor? left,
+            Core.Models.Podcast.PodcastTranscriptDescriptor? right) =>
+            ReferenceEquals(left, right) ||
+            left != null && right != null &&
+            left.ProtocolVersion == right.ProtocolVersion &&
+            string.Equals(left.ContentId, right.ContentId, StringComparison.Ordinal) &&
+            left.Revision == right.Revision &&
+            string.Equals(left.State, right.State, StringComparison.Ordinal) &&
+            left.IsPartial == right.IsPartial;
 
         private void UniversalMemoryReader_OnProgressChanged(double time, double total)
         {
@@ -738,7 +842,16 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
 
         public void Receive(PropertyChangedMessage<string> message)
         {
-            if (message.Sender is TranslationSettings)
+            if (message.Sender is GeneralSettings)
+            {
+                if (message.PropertyName == nameof(GeneralSettings.LXMusicServer) &&
+                    PlayerIdHelper.IsLXMusic(CurrentSongInfo.PlayerId))
+                {
+                    StopLXMusicSSE();
+                    StartLXMusicSSE();
+                }
+            }
+            else if (message.Sender is TranslationSettings)
             {
                 if (message.PropertyName == nameof(TranslationSettings.SelectedTargetLanguageCode))
                 {

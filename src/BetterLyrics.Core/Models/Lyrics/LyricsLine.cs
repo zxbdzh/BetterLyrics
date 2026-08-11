@@ -21,28 +21,34 @@ namespace BetterLyrics.Core.Models.Lyrics
 
         public bool IsPrimaryHasRealSyllableInfo { get; set; } = false;
 
+        public bool IsShareable { get; set; } = true;
+
         public string AgentId { get; set; } = "";
 
-        public LyricsLine()
+        public void RebuildPrimaryChars()
         {
-            for (int charStartIndex = 0; charStartIndex < PrimaryText.Length; charStartIndex++)
+            PrimaryChars.Clear();
+
+            foreach (var syllable in PrimarySyllables.OrderBy(x => x.StartIndex))
             {
-                var syllable = PrimarySyllables.FirstOrDefault(x => x.StartIndex <= charStartIndex && charStartIndex <= x.EndIndex);
-                if (syllable == null) continue;
+                var startIndex = Math.Clamp(syllable.StartIndex, 0, PrimaryText.Length);
+                var length = Math.Min(syllable.Length, PrimaryText.Length - startIndex);
+                if (length <= 0) continue;
 
-                var avgCharDuration = syllable.DurationMs / syllable.Length;
-                if (avgCharDuration == 0) continue;
-
-                var charStartMs = syllable.StartMs + (charStartIndex - syllable.StartIndex) * avgCharDuration;
-                var charEndMs = charStartMs + avgCharDuration;
-
-                PrimaryChars.Add(new BaseLyrics
+                var duration = Math.Max(syllable.DurationMs, length);
+                for (var offset = 0; offset < length; offset++)
                 {
-                    StartIndex = charStartIndex,
-                    StartMs = charStartMs,
-                    EndMs = charEndMs,
-                    Text = PrimaryText[charStartIndex].ToString()
-                });
+                    var charStartMs = syllable.StartMs + (int)((long)duration * offset / length);
+                    var charEndMs = syllable.StartMs + (int)((long)duration * (offset + 1) / length);
+
+                    PrimaryChars.Add(new BaseLyrics
+                    {
+                        StartIndex = startIndex + offset,
+                        StartMs = charStartMs,
+                        EndMs = Math.Max(charStartMs + 1, charEndMs),
+                        Text = PrimaryText[startIndex + offset].ToString()
+                    });
+                }
             }
         }
 
