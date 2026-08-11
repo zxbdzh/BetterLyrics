@@ -210,6 +210,14 @@ public sealed class LyricsSharePaginatorTests
             Assert.True(page.Sum(LyricsSharePaginator.GetDisplayedCharacterCount) <= 10));
         Assert.Equal(new string('a', 12), ReconstructField(pages, item => item.PrimaryText));
         Assert.Equal(new string('b', 12), ReconstructField(pages, item => item.SecondaryText));
+        Assert.Equal(
+            [
+                (new string('a', 5), new string('b', 5)),
+                (new string('a', 5), new string('b', 5)),
+                (new string('a', 2), new string('b', 2)),
+            ],
+            pages.SelectMany(page => page)
+                .Select(item => (item.PrimaryText, item.SecondaryText)));
         Assert.All(pages.SelectMany(page => page), item => Assert.Empty(item.TertiaryText));
     }
 

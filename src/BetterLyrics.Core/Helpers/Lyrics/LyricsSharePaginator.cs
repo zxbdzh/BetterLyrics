@@ -85,8 +85,9 @@ namespace BetterLyrics.Core.Helpers.Lyrics
                 yield break;
             }
 
-            var parts = SplitFields(
-                [line.PrimaryText, line.SecondaryText],
+            var parts = SplitPairedFields(
+                line.PrimaryText,
+                line.SecondaryText,
                 maxCharacters);
 
             foreach (var part in parts)
@@ -97,60 +98,75 @@ namespace BetterLyrics.Core.Helpers.Lyrics
                     EndMs = line.EndMs,
                     AgentId = line.AgentId,
                     IsPrimaryHasRealSyllableInfo = false,
-                    PrimaryText = part[0],
-                    SecondaryText = part[1],
+                    PrimaryText = part.Primary,
+                    SecondaryText = part.Secondary,
                     TertiaryText = string.Empty,
                 };
             }
         }
 
-        private static IReadOnlyList<string[]> SplitFields(
-            IReadOnlyList<string> fieldValues,
+        private static IReadOnlyList<(string Primary, string Secondary)> SplitPairedFields(
+            string primaryValue,
+            string secondaryValue,
             int maxCharacters)
         {
-            List<string[]> parts = [];
-            var currentPart = CreateEmptyPart(fieldValues.Count);
-            var remainingCapacity = maxCharacters;
-
-            void FlushPart()
+            var primary = GetTextElements(primaryValue);
+            var secondary = GetTextElements(secondaryValue);
+            if (primary.Count == 0)
             {
-                if (currentPart.Any(value => !string.IsNullOrEmpty(value))) parts.Add(currentPart);
-                currentPart = CreateEmptyPart(fieldValues.Count);
-                remainingCapacity = maxCharacters;
+                return ChunkTextElements(secondary, maxCharacters)
+                    .Select(value => (string.Empty, value))
+                    .ToList();
+            }
+            if (secondary.Count == 0)
+            {
+                return ChunkTextElements(primary, maxCharacters)
+                    .Select(value => (value, string.Empty))
+                    .ToList();
             }
 
-            for (var fieldIndex = 0; fieldIndex < fieldValues.Count; fieldIndex++)
+            if (maxCharacters == 1)
             {
-                var field = GetTextElements(fieldValues[fieldIndex]);
-                var offset = 0;
-
-                while (offset < field.Count)
-                {
-                    if (remainingCapacity <= 0)
-                    {
-                        FlushPart();
-                        continue;
-                    }
-
-                    var charactersToTake = Math.Min(
-                        field.Count - offset,
-                        remainingCapacity);
-
-                    var content = ConcatRange(field, offset, charactersToTake);
-                    currentPart[fieldIndex] = content;
-                    remainingCapacity -= charactersToTake;
-                    offset += charactersToTake;
-
-                    if (remainingCapacity == 0 || offset < field.Count) FlushPart();
-                }
+                return
+                [
+                    .. ChunkTextElements(primary, 1).Select(value => (value, string.Empty)),
+                    .. ChunkTextElements(secondary, 1).Select(value => (string.Empty, value)),
+                ];
             }
 
-            FlushPart();
+            var totalCharacters = primary.Count + secondary.Count;
+            var primaryBudget = Math.Clamp(
+                maxCharacters * primary.Count / totalCharacters,
+                1,
+                maxCharacters - 1);
+            var secondaryBudget = maxCharacters - primaryBudget;
+            var primaryParts = ChunkTextElements(primary, primaryBudget);
+            var secondaryParts = ChunkTextElements(secondary, secondaryBudget);
+            var partCount = Math.Max(primaryParts.Count, secondaryParts.Count);
+            List<(string Primary, string Secondary)> parts = [];
+            for (var index = 0; index < partCount; index++)
+            {
+                parts.Add((
+                    index < primaryParts.Count ? primaryParts[index] : string.Empty,
+                    index < secondaryParts.Count ? secondaryParts[index] : string.Empty));
+            }
             return parts;
         }
 
-        private static string[] CreateEmptyPart(int fieldCount) =>
-            Enumerable.Repeat(string.Empty, fieldCount).ToArray();
+        private static IReadOnlyList<string> ChunkTextElements(
+            IReadOnlyList<string> values,
+            int chunkSize)
+        {
+            List<string> chunks = [];
+            for (var offset = 0; offset < values.Count; offset += chunkSize)
+            {
+                chunks.Add(ConcatRange(
+                    values,
+                    offset,
+                    Math.Min(chunkSize, values.Count - offset)));
+            }
+            return chunks;
+        }
 
         private static string ConcatRange(
             IReadOnlyList<string> values,
