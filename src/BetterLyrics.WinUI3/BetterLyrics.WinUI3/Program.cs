@@ -44,7 +44,7 @@ namespace BetterLyrics.WinUI3
         static int Main(string[] args)
         {
             WinRT.ComWrappersSupport.InitializeComWrappers();
-            bool isRedirect = DecideRedirection();
+            bool isRedirect = DecideRedirection(out var activationArgs);
 
             if (!isRedirect)
             {
@@ -67,29 +67,39 @@ namespace BetterLyrics.WinUI3
 
                     _ = new App();
 
-                    var args = AppInstance.GetCurrent().GetActivatedEventArgs();
-                    HandleActivation(args, true);
+                    if (activationArgs != null)
+                    {
+                        HandleActivation(activationArgs, true);
+                    }
                 });
             }
 
             return 0;
         }
 
-        private static bool DecideRedirection()
+        private static bool DecideRedirection(out AppActivationArguments? activationArgs)
         {
+            activationArgs = null;
             bool isRedirect = false;
-            AppActivationArguments args = AppInstance.GetCurrent().GetActivatedEventArgs();
-            ExtendedActivationKind kind = args.Kind;
-            AppInstance keyInstance = AppInstance.FindOrRegisterForKey("MySingleInstanceApp");
+            try
+            {
+                activationArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+                AppInstance keyInstance = AppInstance.FindOrRegisterForKey("MySingleInstanceApp");
 
-            if (keyInstance.IsCurrent)
-            {
-                keyInstance.Activated += OnActivated;
+                if (keyInstance.IsCurrent)
+                {
+                    keyInstance.Activated += OnActivated;
+                }
+                else
+                {
+                    isRedirect = true;
+                    RedirectActivationTo(activationArgs, keyInstance);
+                }
             }
-            else
+            catch (COMException exception) when (exception.HResult == unchecked((int)0x80040154))
             {
-                isRedirect = true;
-                RedirectActivationTo(args, keyInstance);
+                // Continue with a normal launch when AppLifecycle registration is unavailable.
+                activationArgs = null;
             }
 
             return isRedirect;

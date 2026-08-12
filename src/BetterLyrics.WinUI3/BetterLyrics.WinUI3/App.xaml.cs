@@ -47,7 +47,14 @@ namespace BetterLyrics.WinUI3
 
             if (settingsService.AppSettings.GeneralSettings.ShowSplashScreen)
             {
-                _splashScreen = SimpleSplashScreen.ShowDefaultSplashScreen();
+                try
+                {
+                    _splashScreen = SimpleSplashScreen.ShowDefaultSplashScreen();
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogWarning(exception, "Unable to show the optional splash screen; continuing startup");
+                }
             }
 
             GlobalToastManager.Initialize();
