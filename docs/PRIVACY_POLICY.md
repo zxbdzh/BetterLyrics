@@ -42,7 +42,7 @@ BetterLyrics' core functionality relies on interacting with third-party lyric pr
 
 When you request lyrics via the App, your song metadata is sent to these services. These third parties have their own privacy policies governing their use of data. We are not responsible for the data practices of these services. We recommend you review their respective privacy policies.
 
-When IKUN Music is selected as the playback source, BetterLyrics may read the current podcast transcript from IKUN Music's loopback-only local interface. BetterLyrics does not receive AurioClub credentials, does not upload podcast audio, and does not persist a duplicate transcript. Account sync, downloads, speech recognition, and optional transcript correction remain owned by IKUN Music.
+When IKUN Music is selected as the playback source, BetterLyrics may use IKUN Music's loopback-only local interface to read the current podcast transcript and the current blog article for sharing. An article is requested only when you open the sharing window and select the article source. It is processed and cached in memory only, is not persisted by BetterLyrics, and is not converted into a fabricated playback timeline. BetterLyrics does not receive AurioClub account credentials, does not upload podcast audio, and does not persist a duplicate transcript. Account sync, downloads, speech recognition, and optional transcript correction remain owned by IKUN Music.
 
 ## 4. Information Sharing and Disclosure
 We do **not** sell, trade, or rent any of your information.

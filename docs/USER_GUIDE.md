@@ -92,6 +92,15 @@ The software supports two methods:
 
 This is usually a default font setting issue. Go to `Settings` -> `Lyrics Window Management` -> `Lyrics Style` -> `Lyrics Font` -> Type `Arial` to get the most stable display effect.
 
+### 🤔 How do I share an IKUN Music podcast transcript or blog article?
+
+1. Open the podcast or blog item in IKUN Music and keep its Open API service available.
+2. In BetterLyrics, point `LX Music Server` to IKUN Music's local Open API address, then open the lyrics sharing window.
+3. When both sources are available, switch between `Transcript` and `Article` above the selection list. Article-only items open the article directly.
+4. Select the paragraphs to share. BetterLyrics automatically paginates content that exceeds one card, so you can preview each page and save all pages or a selected page range.
+
+Article sharing preserves the reading order of headings, paragraphs, lists, and quotes without inventing a playback timeline. The article is requested only after you open the sharing window and select it; an inline retry action is available if loading fails.
+
 ## 🎨 Modes & Appearance
 
 ### 🤔 How to add more modes?
