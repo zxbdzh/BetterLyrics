@@ -48,7 +48,6 @@ namespace BetterLyrics.WinUI3.Views
             Ioc.Default.GetRequiredService<ISongSearchMapService>();
 
         private readonly ISettingsService _settingsService = Ioc.Default.GetRequiredService<ISettingsService>();
-
         private readonly Debouncer _layoutChangedDebouncer = new();
 
         private readonly ParallaxTiltEffect _parallaxEffect = new();
