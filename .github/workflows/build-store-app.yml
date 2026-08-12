@@ -1,128 +1,192 @@
-name: Build WinUI 3 for Store
+name: Build BetterLyrics
 
 on:
-  push:
-    branches: [ "dev" ]
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Create a prerelease and upload the signed package
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: windows-latest
-
     env:
-      # 修改这里：你的解决方案文件名 (.sln) 或项目文件名 (.csproj)
-      SOLUTION_NAME: BetterLyrics.slnx
-      # 修改这里：通常是项目名，用于查找生成路径
-      PROJECT_NAME: BetterLyrics.WinUI3
       CONFIGURATION: Release
-      PLATFORM: x64 # 或者 x86, arm64
-      # 临时证书路径
-      PFX_PATH: GitHubActionsWorkflow.pfx
+      PLATFORM: x64
+      RUNTIME_IDENTIFIER: win-x64
+      PFX_PATH: ${{ github.workspace }}\GitHubActionsWorkflow.pfx
+      PACKAGE_DIR: ${{ github.workspace }}\artifacts\package
+      RELEASE_DIR: ${{ github.workspace }}\artifacts\release
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-    - name: Install .NET 10
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '10.x' # 根据你的项目目标框架修改
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
 
-    - name: Add Labs NuGet Source
-      run: dotnet nuget add source "https://pkgs.dev.azure.com/dotnet/CommunityToolkit/_packaging/CommunityToolkit-Labs/nuget/v3/index.json" -n CommunityToolkit-Labs
+      - name: Read package version
+        shell: pwsh
+        run: |
+          $manifestPath = 'src\BetterLyrics.WinUI3\BetterLyrics.WinUI3 (Package)\Package.appxmanifest'
+          [xml]$manifest = Get-Content -Raw -LiteralPath $manifestPath
+          $version = $manifest.Package.Identity.Version
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw 'Package version is missing.'
+          }
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-    - name: Restore NuGet packages
-      run: nuget restore ${{ env.SOLUTION_NAME }}
+      - name: Validate signing secrets
+        shell: pwsh
+        env:
+          PFX_BASE64: ${{ secrets.BASE64_ENCODED_PFX }}
+          PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PFX_BASE64) -or
+              [string]::IsNullOrWhiteSpace($env:PFX_PASSWORD)) {
+            throw 'BASE64_ENCODED_PFX and PFX_PASSWORD repository secrets are required.'
+          }
 
-    # 解码 Secret 中的证书并保存到本地文件
-    - name: Decode the pfx
-      run: |
-        $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.BASE64_ENCODED_PFX }}")
-        [IO.File]::WriteAllBytes("$env:PFX_PATH", $pfx_cert_byte)
+          [IO.File]::WriteAllBytes(
+            $env:PFX_PATH,
+            [Convert]::FromBase64String($env:PFX_BASE64)
+          )
 
-    - name: Build Tools (PluginAnalyzer)
-      run: |
-        msbuild PluginAnalyzer/PluginAnalyzer.csproj `
-        /p:Configuration=${{ env.CONFIGURATION }} `
-        /p:Platform="Any CPU"
+          $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+            $env:PFX_PATH,
+            $env:PFX_PASSWORD
+          )
+          if ($cert.Subject -ne 'CN=Unsigned') {
+            throw "Unexpected signing certificate subject: $($cert.Subject)"
+          }
 
-    - name: Build Core Library
-      run: |
-        msbuild BetterLyrics.Core/BetterLyrics.Core.csproj `
-        /p:Configuration=${{ env.CONFIGURATION }} `
-        /p:Platform=${{ env.PLATFORM }}
+      - name: Use sideload package identity
+        shell: pwsh
+        run: |
+          $manifestPath = 'src\BetterLyrics.WinUI3\BetterLyrics.WinUI3 (Package)\Package.appxmanifest'
+          [xml]$manifest = Get-Content -Raw -LiteralPath $manifestPath
+          $manifest.Package.Identity.Publisher = 'CN=Unsigned'
+          $manifest.Save((Resolve-Path -LiteralPath $manifestPath))
 
-    - name: 3. Build All Plugins
-      run: |
-        # 自动在 PluginAnalyzer 文件夹下递归查找 .exe 文件
-        $analyzerFile = Get-ChildItem -Path "PluginAnalyzer" -Filter "PluginAnalyzer.exe" -Recurse | Select-Object -First 1
-        
-        if ($null -eq $analyzerFile) {
-            Write-Error "ERROR 错误：找不到 PluginAnalyzer.exe！编译可能失败了。"
-            # 列出目录结构帮助排查
-            Get-ChildItem -Path "PluginAnalyzer" -Recurse
-            exit 1
-        }
+      - name: Run core tests
+        run: >-
+          dotnet test
+          src\BetterLyrics.Core.Tests\BetterLyrics.Core.Tests.csproj
+          --configuration Release
 
-        $analyzerPath = $analyzerFile.FullName
-        Write-Host "找到工具路径: $analyzerPath"
+      - name: Build signed x64 MSIX
+        shell: pwsh
+        env:
+          PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
+        run: |
+          $project = 'src\BetterLyrics.WinUI3\BetterLyrics.WinUI3 (Package)\BetterLyrics.WinUI3 (Package).wapproj'
+          $packageDir = "$env:PACKAGE_DIR\"
 
-        $plugins = Get-ChildItem -Path "Plugins" -Filter "*.csproj" -Recurse
-        foreach ($plugin in $plugins) {
-            Write-Host "Building Plugin: $($plugin.Name)..."
-            
-            msbuild $plugin.FullName `
-            /p:Configuration=${{ env.CONFIGURATION }} `
-            /p:Platform=${{ env.PLATFORM }} `
+          msbuild $project `
+            /restore `
+            /p:Configuration=$env:CONFIGURATION `
+            /p:Platform=$env:PLATFORM `
+            /p:RuntimeIdentifier=$env:RUNTIME_IDENTIFIER `
             /p:SelfContained=true `
-            /p:RuntimeIdentifier=win-x64 `
-            /p:AnalyzerPath="$analyzerPath"
+            /p:UapAppxPackageBuildMode=SideloadOnly `
+            /p:AppxBundle=Never `
+            /p:AppxAutoIncrementPackageRevision=false `
+            /p:AppxPackageSigningEnabled=true `
+            /p:PackageCertificateKeyFile="$env:PFX_PATH" `
+            /p:PackageCertificatePassword="$env:PFX_PASSWORD" `
+            /p:GenerateAppxPackageOnBuild=true `
+            /p:AppxPackageDir="$packageDir"
 
-            if ($LASTEXITCODE -ne 0) { exit 1 }
-        }
+          if ($LASTEXITCODE -ne 0) {
+            throw "MSIX build failed with exit code $LASTEXITCODE."
+          }
 
-    # 核心构建步骤
-    # UapAppxPackageBuildMode=StoreUpload: 生成用于商店上传的 .msixupload 文件
-    # AppxBundle=Always: 确保生成 Bundle 包
-    - name: Build Main App and Package for Store
-      run: |
-        msbuild ${{ env.SOLUTION_NAME }} `
-        /p:Configuration=${{ env.CONFIGURATION }} `
-        /p:Platform=${{ env.PLATFORM }} `
-        /p:UapAppxPackageBuildMode=StoreUpload `
-        /p:AppxBundle=Always `
-        /p:AppxBundlePlatforms="x86|x64" `
-        /p:SelfContained=true `
-        /p:AppxPackageSigningEnabled=true `
-        /p:PackageCertificateKeyFile=${{ env.PFX_PATH }} `
-        /p:PackageCertificatePassword=${{ secrets.PFX_PASSWORD }} `
-        /p:GenerateAppxPackageOnBuild=true
+      - name: Stage and verify release assets
+        shell: pwsh
+        env:
+          PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
+        run: |
+          New-Item -ItemType Directory -Path $env:RELEASE_DIR -Force | Out-Null
 
-    # 从 PFX 中提取公钥 (.cer)
-    - name: Export Public Certificate
-      run: |
-        $pfxPassword = ConvertTo-SecureString "${{ secrets.PFX_PASSWORD }}" -AsPlainText -Force
-        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-        $cert.Import("$env:PFX_PATH", $pfxPassword, "Exportable")
-        # 将公钥导出为 BetterLyrics_Sideloadly_Cert.cer
-        [IO.File]::WriteAllBytes("BetterLyrics_Sideloadly_Cert.cer", $cert.Export("Cert"))
+          $package = Get-ChildItem -LiteralPath $env:PACKAGE_DIR -Recurse -File -Filter '*.msix' |
+            Sort-Object Length -Descending |
+            Select-Object -First 1
+          if ($null -eq $package) {
+            throw 'The build did not produce an MSIX package.'
+          }
 
-    # 移除临时证书（安全清理）
-    - name: Remove the pfx
-      if: always()
-      run: Remove-Item -path ${{ env.PFX_PATH }}
+          $releasePackage = Join-Path `
+            $env:RELEASE_DIR `
+            "BetterLyrics.WinUI3_$($env:VERSION)_x64.msix"
+          Copy-Item -LiteralPath $package.FullName -Destination $releasePackage
 
-    # 上传构建产物 (.msixupload)
-    - name: Upload Store Package
-      uses: actions/upload-artifact@v4
-      with:
-        name: StorePackage
-        path: |
-          BetterLyrics_Sideloadly_Cert.cer
-          **/*.msixupload
-          **/*.msixbundle
+          $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+            $env:PFX_PATH,
+            $env:PFX_PASSWORD
+          )
+          [IO.File]::WriteAllBytes(
+            (Join-Path $env:RELEASE_DIR 'BetterLyrics_Sideload_Cert.cer'),
+            $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+          )
+
+          $signature = Get-AuthenticodeSignature -LiteralPath $releasePackage
+          if ($null -eq $signature.SignerCertificate -or
+              $signature.SignerCertificate.Subject -ne 'CN=Unsigned') {
+            throw 'The MSIX signature does not use the expected sideload certificate.'
+          }
+
+          $manifestText = tar -xOf $releasePackage AppxManifest.xml | Out-String
+          [xml]$packageManifest = $manifestText
+          $identity = $packageManifest.Package.Identity
+          if ($identity.Version -ne $env:VERSION -or
+              $identity.Publisher -ne 'CN=Unsigned' -or
+              $identity.ProcessorArchitecture -ne 'x64') {
+            throw "Unexpected package identity: $($identity.OuterXml)"
+          }
+
+          $hash = Get-FileHash -LiteralPath $releasePackage -Algorithm SHA256
+          "$($hash.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($releasePackage))" |
+            Set-Content -LiteralPath (Join-Path $env:RELEASE_DIR 'SHA256SUMS.txt') -Encoding ascii
+
+      - name: Remove private signing key
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path -LiteralPath $env:PFX_PATH) {
+            Remove-Item -LiteralPath $env:PFX_PATH -Force
+          }
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BetterLyrics-v${{ env.VERSION }}-win-x64
+          path: artifacts/release/*
+          if-no-files-found: error
+
+      - name: Create GitHub prerelease
+        if: inputs.publish_release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:VERSION"
+
+          $notesFile = "docs\releases\$tag.md"
+          $assets = @(Get-ChildItem -LiteralPath $env:RELEASE_DIR -File |
+            ForEach-Object FullName)
+
+          gh release create $tag @assets `
+            --target $env:GITHUB_SHA `
+            --title $tag `
+            --notes-file $notesFile `
+            --prerelease
