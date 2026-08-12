@@ -78,6 +78,57 @@ jobs:
           $manifest.Package.Identity.Publisher = 'CN=Unsigned'
           $manifest.Save((Resolve-Path -LiteralPath $manifestPath))
 
+      - name: Generate integration constants
+        shell: pwsh
+        env:
+          DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_SHARED_SECRET: ${{ secrets.LASTFM_SHARED_SECRET }}
+        run: |
+          $integrationSecrets = @{
+            DISCORD_APP_ID = $env:DISCORD_APP_ID
+            LASTFM_API_KEY = $env:LASTFM_API_KEY
+            LASTFM_SHARED_SECRET = $env:LASTFM_SHARED_SECRET
+          }
+          $missingSecrets = @($integrationSecrets.GetEnumerator() |
+            Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } |
+            ForEach-Object Key)
+          if ($missingSecrets.Count -gt 0) {
+            throw "Missing integration secrets: $($missingSecrets -join ', ')"
+          }
+
+          function ConvertTo-CSharpStringLiteral([string]$value) {
+            return '"' + $value.Replace('\', '\\').Replace('"', '\"') + '"'
+          }
+
+          $constantsDir = 'src\BetterLyrics.Core\Constants'
+          $discordAppId = ConvertTo-CSharpStringLiteral $env:DISCORD_APP_ID
+          $lastFmApiKey = ConvertTo-CSharpStringLiteral $env:LASTFM_API_KEY
+          $lastFmSharedSecret = ConvertTo-CSharpStringLiteral $env:LASTFM_SHARED_SECRET
+
+          @"
+          namespace BetterLyrics.Core.Constants
+          {
+              public class Discord
+              {
+                  public const string AppID = $discordAppId;
+              }
+          }
+          "@ | Set-Content -LiteralPath "$constantsDir\Discord.cs" -Encoding utf8
+
+          @"
+          namespace BetterLyrics.Core.Constants
+          {
+              public static class LastFM
+              {
+                  public const string ApiKey = $lastFmApiKey;
+                  public const string SharedSecret = $lastFmSharedSecret;
+                  public const string UnAuthUrl = "https://www.last.fm/settings/applications";
+                  public const string SessionKeyCredentialKey = "LastFMSessionKey";
+              }
+          }
+          "@ | Set-Content -LiteralPath "$constantsDir\LastFM.cs" -Encoding utf8
+
       - name: Run core tests
         run: >-
           dotnet test
