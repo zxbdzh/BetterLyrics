@@ -1188,6 +1188,9 @@ namespace BetterLyrics.WinUI3.Controls
                     if (diff >= timelineSyncThreshold)
                     {
                         _songPosition = realPosition;
+                        _songPositionWithOffset = realPosition +
+                                                  TimeSpan.FromMilliseconds(_gsmtcService.CurrentMediaSourceProviderInfo
+                                                      ?.PositionOffset ?? 0);
                     }
 
                     // �϶��������ȴ���
