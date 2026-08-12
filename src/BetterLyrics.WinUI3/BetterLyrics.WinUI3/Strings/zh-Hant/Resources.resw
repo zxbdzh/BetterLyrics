@@ -2581,4 +2581,13 @@
   <data name="LyricsSharePageExportRetry" xml:space="preserve"><value>重試失敗頁面</value></data>
   <data name="LyricsSharePageExportFinish" xml:space="preserve"><value>完成</value></data>
   <data name="LyricsSharePageExportPageUnavailable" xml:space="preserve"><value>要求的分享頁面已不存在，請重新整理選取內容後再試一次。</value></data>
+  <data name="LyricsSharePageSelectContentTitle.Text" xml:space="preserve"><value>選擇內容</value></data>
+  <data name="LyricsSharePageSelectAll.Content" xml:space="preserve"><value>全選</value></data>
+  <data name="LyricsSharePageTranscriptSource.Content" xml:space="preserve"><value>逐字稿</value></data>
+  <data name="LyricsSharePageLongFormSource.Content" xml:space="preserve"><value>正文</value></data>
+  <data name="LyricsSharePageLongFormLoading.Text" xml:space="preserve"><value>正在載入文章正文</value></data>
+  <data name="LyricsSharePageLongFormRetry.Content" xml:space="preserve"><value>重試</value></data>
+  <data name="LyricsSharePageLongFormLoadFailed" xml:space="preserve"><value>無法從 IKUN Music 載入文章正文。請保持同一內容為目前項目，然後重試。</value></data>
+  <data name="LyricsSharePageLongFormEmpty" xml:space="preserve"><value>這篇文章沒有可分享的正文。</value></data>
+  <data name="LyricsSharePageTranscriptEmpty" xml:space="preserve"><value>目前沒有可分享的逐字稿內容。</value></data>
 </root>

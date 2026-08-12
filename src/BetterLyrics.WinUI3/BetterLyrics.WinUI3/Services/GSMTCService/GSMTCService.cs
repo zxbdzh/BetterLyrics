@@ -26,6 +26,7 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Vanara.Windows.Shell;
 using Windows.Media.Control;
@@ -46,6 +47,7 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
     {
         private EventSourceReader? _lxMusicSse = null;
         private readonly PodcastTranscriptBridge _podcastTranscriptBridge = new();
+        private readonly PodcastLongFormContentBridge _podcastLongFormContentBridge = new();
         private PodcastTranscriptDescriptor? _podcastTranscriptDescriptor = null;
         private string _podcastContentId = "";
         private TaskCompletionSource? _lxMediaKindSignal;
@@ -80,6 +82,7 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial TimeSpan CurrentPosition { get; private set; } = TimeSpan.Zero;
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial SongInfo CurrentSongInfo { get; private set; } = SongInfoExtensions.Placeholder;
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial bool IsPodcast { get; private set; } = false;
+        [ObservableProperty][NotifyPropertyChangedRecipients] public partial PodcastLongFormContentDescriptor? CurrentLongFormContentDescriptor { get; private set; } = null;
 
         [ObservableProperty][NotifyPropertyChangedRecipients] public partial MediaSourceProviderInfo? CurrentMediaSourceProviderInfo { get; set; }
 
@@ -589,8 +592,22 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
             _podcastContentId = "";
             _podcastTranscriptDescriptor = null;
             _podcastTranscriptBridge.Reset();
+            CurrentLongFormContentDescriptor = null;
+            _podcastLongFormContentBridge.Reset();
             _lxMediaKindSignal = null;
             IsPodcast = false;
+        }
+
+        private void SwitchPodcastContent(string contentId)
+        {
+            if (string.Equals(_podcastContentId, contentId, StringComparison.Ordinal)) return;
+
+            CancelPodcastLyricsRefresh();
+            _podcastContentId = contentId;
+            _podcastTranscriptDescriptor = null;
+            _podcastTranscriptBridge.Reset();
+            CurrentLongFormContentDescriptor = null;
+            _podcastLongFormContentBridge.Reset();
         }
 
         private void ActivatePodcastState()
@@ -634,9 +651,7 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                                 StringComparison.Ordinal);
                         if (contentChanged)
                         {
-                            CancelPodcastLyricsRefresh();
-                            _podcastContentId = nextDescriptor!.ContentId;
-                            _podcastTranscriptBridge.Reset();
+                            SwitchPodcastContent(nextDescriptor!.ContentId);
                         }
                         var descriptorChanged = !PodcastTranscriptDescriptorEquals(
                             _podcastTranscriptDescriptor,
@@ -652,6 +667,34 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                             ActivatePodcastState();
                         }
                         if (descriptorChanged) UpdateLyrics();
+                        return;
+                    }
+                    if (e.Event == "longFormContent")
+                    {
+                        var nextDescriptor = data.ValueKind == JsonValueKind.Null
+                            ? null
+                            : JsonSerializer.Deserialize(
+                                e.Message,
+                                Core.Serialization.SourceGenerationContext.Default.PodcastLongFormContentDescriptor);
+                        if (nextDescriptor != null &&
+                            !string.Equals(
+                                _podcastContentId,
+                                nextDescriptor.ContentId,
+                                StringComparison.Ordinal))
+                        {
+                            SwitchPodcastContent(nextDescriptor.ContentId);
+                        }
+
+                        var descriptorChanged = !PodcastLongFormContentDescriptorEquals(
+                            CurrentLongFormContentDescriptor,
+                            nextDescriptor);
+                        if (descriptorChanged) _podcastLongFormContentBridge.Reset();
+                        CurrentLongFormContentDescriptor = nextDescriptor;
+                        if (nextDescriptor != null)
+                        {
+                            _podcastContentId = nextDescriptor.ContentId;
+                            ActivatePodcastState();
+                        }
                         return;
                     }
                     if (data.ValueKind == JsonValueKind.Number)
@@ -705,10 +748,7 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
                             }
                             if (!string.Equals(_podcastContentId, contentId, StringComparison.Ordinal))
                             {
-                                CancelPodcastLyricsRefresh();
-                                _podcastContentId = contentId;
-                                _podcastTranscriptDescriptor = null;
-                                _podcastTranscriptBridge.Reset();
+                                SwitchPodcastContent(contentId);
                             }
                         }
                     }
@@ -726,6 +766,28 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
             left.Revision == right.Revision &&
             string.Equals(left.State, right.State, StringComparison.Ordinal) &&
             left.IsPartial == right.IsPartial;
+
+        private static bool PodcastLongFormContentDescriptorEquals(
+            PodcastLongFormContentDescriptor? left,
+            PodcastLongFormContentDescriptor? right) =>
+            ReferenceEquals(left, right) ||
+            left != null && right != null &&
+            left.ProtocolVersion == right.ProtocolVersion &&
+            string.Equals(left.ContentId, right.ContentId, StringComparison.Ordinal) &&
+            left.Revision == right.Revision &&
+            left.BlockCount == right.BlockCount &&
+            left.CharacterCount == right.CharacterCount;
+
+        public Task<PodcastLongFormContentDocument> GetCurrentLongFormContentAsync(
+            CancellationToken cancellationToken = default)
+        {
+            var descriptor = CurrentLongFormContentDescriptor ??
+                throw new InvalidOperationException("The current IKUN content has no long-form document.");
+            return _podcastLongFormContentBridge.LoadAsync(
+                LXMusic.ResolveServer(_settingsService.AppSettings.GeneralSettings.LXMusicServer),
+                descriptor,
+                cancellationToken);
+        }
 
         private void UniversalMemoryReader_OnProgressChanged(double time, double total)
         {

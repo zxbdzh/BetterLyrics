@@ -31,6 +31,7 @@ namespace BetterLyrics.WinUI3.Views
         private readonly ILocalizationService _localizationService;
         private CancellationTokenSource? _exportCancellation;
         private Control? _focusBeforePreview;
+        private bool _isSynchronizingLyricsSelection;
 
         public LyricsSharePageViewModel ViewModel { get; set; }
 
@@ -43,6 +44,8 @@ namespace BetterLyrics.WinUI3.Views
 
         private void LyricsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (_isSynchronizingLyricsSelection) return;
+
             var totalCount = LyricsListView.Items.Count;
             var selectedCount = LyricsListView.SelectedItems.Count;
 
@@ -50,11 +53,58 @@ namespace BetterLyrics.WinUI3.Views
             else if (selectedCount == totalCount) LyricsHostCheckBox.IsChecked = true;
             else LyricsHostCheckBox.IsChecked = null;
 
-            var selectedLyrics = LyricsListView.SelectedItems.Cast<LyricsLine>().ToHashSet();
-            ViewModel.UpdateSelectedLyrics(LyricsListView.Items
+            var selectedItems = LyricsListView.SelectedItems.Cast<LyricsLine>().ToHashSet();
+            ViewModel.UpdateSelectedLyricsIndexes(LyricsListView.Items
                 .Cast<LyricsLine>()
-                .Where(selectedLyrics.Contains)
-                .ToList());
+                .Select((line, index) => (line, index))
+                .Where(item => selectedItems.Contains(item.line))
+                .Select(item => item.index));
+        }
+
+        private void LyricsSharePage_Loaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.ShareSourceStateChanged -= ViewModel_ShareSourceStateChanged;
+            ViewModel.ShareSourceStateChanged += ViewModel_ShareSourceStateChanged;
+            ViewModel.ActivateSharePage();
+            SynchronizeLyricsSelection();
+        }
+
+        private void ViewModel_ShareSourceStateChanged(object? sender, EventArgs e)
+        {
+            _ = DispatcherQueue.TryEnqueue(SynchronizeLyricsSelection);
+        }
+
+        private void SynchronizeLyricsSelection()
+        {
+            _isSynchronizingLyricsSelection = true;
+            try
+            {
+                LyricsListView.SelectedItems.Clear();
+                foreach (var index in ViewModel.SelectedLyricsIndexes.OrderBy(index => index))
+                {
+                    if (index >= 0 && index < LyricsListView.Items.Count)
+                    {
+                        LyricsListView.SelectedItems.Add(LyricsListView.Items[index]);
+                    }
+                }
+
+                var totalCount = LyricsListView.Items.Count;
+                var selectedCount = LyricsListView.SelectedItems.Count;
+                LyricsHostCheckBox.IsChecked = selectedCount == 0
+                    ? false
+                    : selectedCount == totalCount
+                        ? true
+                        : null;
+            }
+            finally
+            {
+                _isSynchronizingLyricsSelection = false;
+            }
+        }
+
+        private async void RetryLongFormContent_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.RetryLongFormContentAsync();
         }
 
         private async void SaveImage_Click(SplitButton sender, SplitButtonClickEventArgs args)
@@ -599,8 +649,8 @@ namespace BetterLyrics.WinUI3.Views
                 PreviewToolbar.IsEnabled = true;
                 PaginationControls.IsEnabled = true;
                 StyleSelectionRegion.IsEnabled = true;
-                SaveImageButton.IsEnabled = true;
-                CopyImageButton.IsEnabled = true;
+                SaveImageButton.IsEnabled = ViewModel.CanExport;
+                CopyImageButton.IsEnabled = ViewModel.CanExport;
                 if (focusToRestore?.Focus(FocusState.Programmatic) != true && XamlRoot != null)
                 {
                     SaveImageButton.Focus(FocusState.Programmatic);
@@ -747,6 +797,8 @@ namespace BetterLyrics.WinUI3.Views
         private void LyricsSharePage_Unloaded(object sender, RoutedEventArgs e)
         {
             _exportCancellation?.Cancel();
+            ViewModel.ShareSourceStateChanged -= ViewModel_ShareSourceStateChanged;
+            ViewModel.DeactivateSharePage();
         }
 
         private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>

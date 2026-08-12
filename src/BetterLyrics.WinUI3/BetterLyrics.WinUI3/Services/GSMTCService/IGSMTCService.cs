@@ -5,6 +5,7 @@ using BetterLyrics.Core.Models;
 using BetterLyrics.Core.Models.Domain;
 using BetterLyrics.Core.Models.Entities;
 using BetterLyrics.Core.Models.Lyrics;
+using BetterLyrics.Core.Models.Podcast;
 using BetterLyrics.Core.Models.Settings;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -42,6 +43,10 @@ namespace BetterLyrics.WinUI3.Services.GSMTCService
         LyricsData? CurrentLyricsData { get; }
 
         bool IsPodcast { get; }
+        PodcastLongFormContentDescriptor? CurrentLongFormContentDescriptor { get; }
+
+        Task<PodcastLongFormContentDocument> GetCurrentLongFormContentAsync(
+            CancellationToken cancellationToken = default);
 
         BitmapImage? AlbumArtBitmapImage { get; }
         byte[]? AlbumArtBytes { get; }

@@ -2636,4 +2636,13 @@
   <data name="LyricsSharePageExportRetry" xml:space="preserve"><value>Retry failed pages</value></data>
   <data name="LyricsSharePageExportFinish" xml:space="preserve"><value>Finish</value></data>
   <data name="LyricsSharePageExportPageUnavailable" xml:space="preserve"><value>The requested share page is no longer available. Refresh the selection and try again.</value></data>
+  <data name="LyricsSharePageSelectContentTitle.Text" xml:space="preserve"><value>Select content</value></data>
+  <data name="LyricsSharePageSelectAll.Content" xml:space="preserve"><value>Select all</value></data>
+  <data name="LyricsSharePageTranscriptSource.Content" xml:space="preserve"><value>Transcript</value></data>
+  <data name="LyricsSharePageLongFormSource.Content" xml:space="preserve"><value>Article</value></data>
+  <data name="LyricsSharePageLongFormLoading.Text" xml:space="preserve"><value>Loading article text</value></data>
+  <data name="LyricsSharePageLongFormRetry.Content" xml:space="preserve"><value>Retry</value></data>
+  <data name="LyricsSharePageLongFormLoadFailed" xml:space="preserve"><value>Unable to load the article text from IKUN Music. Keep the same item active, then try again.</value></data>
+  <data name="LyricsSharePageLongFormEmpty" xml:space="preserve"><value>This article has no text available to share.</value></data>
+  <data name="LyricsSharePageTranscriptEmpty" xml:space="preserve"><value>No shareable transcript lines are available.</value></data>
 </root>

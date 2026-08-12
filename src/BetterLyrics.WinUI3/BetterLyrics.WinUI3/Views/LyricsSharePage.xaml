@@ -15,6 +15,7 @@
     xmlns:uc="using:BetterLyrics.WinUI3.Controls"
     xmlns:ui="using:CommunityToolkit.WinUI"
     xmlns:viewmodels="using:BetterLyrics.WinUI3.ViewModels"
+    Loaded="LyricsSharePage_Loaded"
     mc:Ignorable="d"
     Unloaded="LyricsSharePage_Unloaded">
 
@@ -41,34 +42,91 @@
             <Grid Padding="24" RowSpacing="12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <TextBlock x:Uid="LyricsSharePageSelectLyricsTitle" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                    <TextBlock x:Uid="LyricsSharePageSelectContentTitle" Style="{ThemeResource SubtitleTextBlockStyle}" />
                     <CheckBox
                         x:Name="LyricsHostCheckBox"
+                        x:Uid="LyricsSharePageSelectAll"
+                        MinHeight="44"
                         Click="LyricsHostCheckBox_Click"
+                        IsEnabled="{x:Bind ViewModel.CanSelectLyrics, Mode=OneWay}"
                         IsThreeState="True" />
                 </StackPanel>
-                <ListView
-                    x:Name="LyricsListView"
+                <controls:Segmented
                     Grid.Row="1"
-                    ItemsSource="{x:Bind ViewModel.ShareableLyricsLines, Mode=OneWay}"
-                    SelectionChanged="LyricsListView_SelectionChanged"
-                    SelectionMode="Multiple">
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="lyrics:LyricsLine">
-                            <StackPanel Padding="0,8" Spacing="2">
-                                <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
-                                <TextBlock
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{x:Bind SecondaryText}"
-                                    TextWrapping="Wrap"
-                                    Visibility="{x:Bind SecondaryText, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                    MinHeight="44"
+                    HorizontalAlignment="Stretch"
+                    SelectedIndex="{x:Bind ViewModel.SelectedContentSourceIndex, Mode=TwoWay}"
+                    Visibility="{x:Bind ViewModel.IsSourceSelectorVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <controls:SegmentedItem x:Uid="LyricsSharePageTranscriptSource" />
+                    <controls:SegmentedItem x:Uid="LyricsSharePageLongFormSource" />
+                </controls:Segmented>
+                <Grid Grid.Row="2">
+                    <ListView
+                        x:Name="LyricsListView"
+                        ItemsSource="{x:Bind ViewModel.ShareableLyricsLines, Mode=OneWay}"
+                        SelectionChanged="LyricsListView_SelectionChanged"
+                        SelectionMode="Multiple"
+                        Visibility="{x:Bind ViewModel.IsLyricsListVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="lyrics:LyricsLine">
+                                <StackPanel Padding="0,8" Spacing="2">
+                                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+                                    <TextBlock
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind SecondaryText}"
+                                        TextWrapping="Wrap"
+                                        Visibility="{x:Bind SecondaryText, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="12"
+                        Visibility="{x:Bind ViewModel.IsLongFormContentLoadingVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ProgressRing
+                            HorizontalAlignment="Center"
+                            IsActive="{x:Bind ViewModel.IsLongFormContentLoadingVisible, Mode=OneWay}" />
+                        <TextBlock
+                            x:Uid="LyricsSharePageLongFormLoading"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel
+                        MaxWidth="320"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="12"
+                        Visibility="{x:Bind ViewModel.HasLongFormContentError, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            AutomationProperties.LiveSetting="Assertive"
+                            Text="{x:Bind ViewModel.LongFormContentError, Mode=OneWay}"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                        <Button
+                            x:Uid="LyricsSharePageLongFormRetry"
+                            MinWidth="120"
+                            Height="44"
+                            HorizontalAlignment="Center"
+                            Click="RetryLongFormContent_Click" />
+                    </StackPanel>
+                    <TextBlock
+                        MaxWidth="320"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.ShareSourceEmptyMessage, Mode=OneWay}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        Visibility="{x:Bind ViewModel.IsShareSourceEmpty, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </Grid>
             </Grid>
         </ContentControl>
 
@@ -406,6 +464,7 @@
                         x:Name="SaveImageButton"
                         x:Uid="LyricsSharePageSaveImage"
                         Click="SaveImage_Click"
+                        IsEnabled="{x:Bind ViewModel.CanExport, Mode=OneWay}"
                         Style="{ThemeResource AccentSplitButtonStyle}">
                         <SplitButton.Flyout>
                             <MenuFlyout>
@@ -429,7 +488,8 @@
                     <Button
                         x:Name="CopyImageButton"
                         x:Uid="LyricsSharePageCopyImage"
-                        Click="CopyImage_Click" />
+                        Click="CopyImage_Click"
+                        IsEnabled="{x:Bind ViewModel.CanExport, Mode=OneWay}" />
                 </StackPanel>
             </Grid>
             </Grid>
