@@ -196,12 +196,46 @@ jobs:
             throw 'The MSIX signature does not use the expected sideload certificate.'
           }
 
-          $manifestText = tar -xOf $releasePackage AppxManifest.xml | Out-String
-          [xml]$packageManifest = $manifestText
-          $identity = $packageManifest.Package.Identity
-          if ($identity.Version -ne $env:VERSION -or
-              $identity.Publisher -ne 'CN=Unsigned' -or
-              $identity.ProcessorArchitecture -ne 'x64') {
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [IO.Compression.ZipFile]::OpenRead($releasePackage)
+          try {
+            $manifestEntry = @($archive.Entries | Where-Object {
+              [string]::Equals(
+                $_.FullName,
+                'AppxManifest.xml',
+                [StringComparison]::Ordinal
+              )
+            }) | Select-Object -First 1
+            if ($null -eq $manifestEntry) {
+              throw 'The MSIX package does not contain AppxManifest.xml.'
+            }
+
+            $manifestStream = $manifestEntry.Open()
+            try {
+              $packageManifest = [Xml.XmlDocument]::new()
+              $packageManifest.Load($manifestStream)
+            }
+            finally {
+              $manifestStream.Dispose()
+            }
+          }
+          finally {
+            $archive.Dispose()
+          }
+
+          $identity = $packageManifest.SelectSingleNode(
+            "/*[local-name()='Package']/*[local-name()='Identity']"
+          )
+          if ($null -eq $identity) {
+            throw 'The package manifest does not contain an Identity element.'
+          }
+
+          $packageVersion = $identity.GetAttribute('Version')
+          $packagePublisher = $identity.GetAttribute('Publisher')
+          $packageArchitecture = $identity.GetAttribute('ProcessorArchitecture')
+          if ($packageVersion -ne $env:VERSION -or
+              $packagePublisher -ne 'CN=Unsigned' -or
+              $packageArchitecture -ne 'x64') {
             throw "Unexpected package identity: $($identity.OuterXml)"
           }
 
