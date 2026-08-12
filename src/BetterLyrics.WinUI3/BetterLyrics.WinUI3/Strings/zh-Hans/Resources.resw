@@ -2556,6 +2556,61 @@
   <data name="WindowSettingsControlTheme.Header" xml:space="preserve">
     <value>窗口主题</value>
   </data>
+  <data name="PodcastTranscriptionTitle.Text" xml:space="preserve"><value>播客转写</value></data>
+  <data name="PodcastTranscriptionStageLabel.Text" xml:space="preserve"><value>当前阶段</value></data>
+  <data name="PodcastTranscriptionModelLabel.Text" xml:space="preserve"><value>识别模型</value></data>
+  <data name="PodcastTranscriptionModelStateLabel.Text" xml:space="preserve"><value>模型状态</value></data>
+  <data name="PodcastTranscriptionSourceLabel.Text" xml:space="preserve"><value>文本来源</value></data>
+  <data name="PodcastTranscriptionRefresh.Content" xml:space="preserve"><value>刷新转写状态</value></data>
+  <data name="PodcastTranscriptionOpenDetails.Content" xml:space="preserve"><value>打开转写明细</value></data>
+  <data name="PodcastTranscriptionWaiting" xml:space="preserve"><value>等待转写状态</value></data>
+  <data name="PodcastTranscriptionWaitingSummary" xml:space="preserve"><value>IKUN 暂未报告当前播客的转写状态。</value></data>
+  <data name="PodcastTranscriptionUnknown" xml:space="preserve"><value>未知</value></data>
+  <data name="PodcastTranscriptionNotRequired" xml:space="preserve"><value>无需模型</value></data>
+  <data name="PodcastTranscriptionStageIdle" xml:space="preserve"><value>尚未开始</value></data>
+  <data name="PodcastTranscriptionStageQueued" xml:space="preserve"><value>等待处理</value></data>
+  <data name="PodcastTranscriptionStageDownloadingAudio" xml:space="preserve"><value>下载音频</value></data>
+  <data name="PodcastTranscriptionStagePreparingModel" xml:space="preserve"><value>准备 ASR 模型</value></data>
+  <data name="PodcastTranscriptionStageConvertingAudio" xml:space="preserve"><value>转换音频</value></data>
+  <data name="PodcastTranscriptionStageRecognizing" xml:space="preserve"><value>识别语音</value></data>
+  <data name="PodcastTranscriptionStageSaving" xml:space="preserve"><value>保存逐字稿</value></data>
+  <data name="PodcastTranscriptionStageCompleted" xml:space="preserve"><value>已完成</value></data>
+  <data name="PodcastTranscriptionStageFailed" xml:space="preserve"><value>失败</value></data>
+  <data name="PodcastTranscriptionModelStateNotRequired" xml:space="preserve"><value>无需模型</value></data>
+  <data name="PodcastTranscriptionModelStateChecking" xml:space="preserve"><value>正在检查</value></data>
+  <data name="PodcastTranscriptionModelStateNotInstalled" xml:space="preserve"><value>尚未安装</value></data>
+  <data name="PodcastTranscriptionModelStateDownloading" xml:space="preserve"><value>正在下载</value></data>
+  <data name="PodcastTranscriptionModelStateReady" xml:space="preserve"><value>已就绪</value></data>
+  <data name="PodcastTranscriptionModelStateError" xml:space="preserve"><value>模型异常</value></data>
+  <data name="PodcastTranscriptionSourcePublisher" xml:space="preserve"><value>发布者逐字稿</value></data>
+  <data name="PodcastTranscriptionSourceAsr" xml:space="preserve"><value>本地 ASR</value></data>
+  <data name="PodcastTranscriptionReady" xml:space="preserve"><value>逐字稿已就绪</value></data>
+  <data name="PodcastTranscriptionPublisherReadySummary" xml:space="preserve"><value>当前使用播客发布者提供的逐字稿。</value></data>
+  <data name="PodcastTranscriptionAsrReadySummary" xml:space="preserve"><value>本地语音识别已经完成。</value></data>
+  <data name="PodcastTranscriptionFailed" xml:space="preserve"><value>转写失败</value></data>
+  <data name="PodcastTranscriptionFailedSummary" xml:space="preserve"><value>请查看下方错误明细，然后重试。</value></data>
+  <data name="PodcastTranscriptionWorkingSummary" xml:space="preserve"><value>IKUN 正在生成带时间轴的播客文本。</value></data>
+  <data name="PodcastTranscriptionStart" xml:space="preserve"><value>开始转写</value></data>
+  <data name="PodcastTranscriptionWorking" xml:space="preserve"><value>正在转写</value></data>
+  <data name="PodcastTranscriptionRetry" xml:space="preserve"><value>重试转写</value></data>
+  <data name="PodcastTranscriptionRestart" xml:space="preserve"><value>重新转写</value></data>
+  <data name="PodcastTranscriptionRestartTitle" xml:space="preserve"><value>重新转写当前播客？</value></data>
+  <data name="PodcastTranscriptionRestartDescription" xml:space="preserve"><value>识别完成后，现有的本地 ASR 逐字稿将被替换。</value></data>
+  <data name="PodcastTranscriptionRefreshFailed" xml:space="preserve"><value>无法刷新转写状态</value></data>
+  <data name="PodcastTranscriptionActionFailed" xml:space="preserve"><value>无法执行转写操作</value></data>
+  <data name="SettingsPagePodcastTranscription" xml:space="preserve"><value>播客转写</value></data>
+  <data name="PodcastTranscriptionSettingsTitle.Text" xml:space="preserve"><value>播客转写</value></data>
+  <data name="PodcastTranscriptionSettingsDescription.Text" xml:space="preserve"><value>查看 IKUN Music 的本地转写进度、模型状态，并控制当前播客的转写任务。</value></data>
+  <data name="PodcastTranscriptionCurrentPodcast.Header" xml:space="preserve"><value>当前播客</value></data>
+  <data name="PodcastTranscriptionCurrentStatus.Header" xml:space="preserve"><value>转写状态</value></data>
+  <data name="PodcastTranscriptionStageCard.Header" xml:space="preserve"><value>当前阶段</value></data>
+  <data name="PodcastTranscriptionModelCard.Header" xml:space="preserve"><value>识别模型</value></data>
+  <data name="PodcastTranscriptionModelStateCard.Header" xml:space="preserve"><value>模型状态</value></data>
+  <data name="PodcastTranscriptionSourceCard.Header" xml:space="preserve"><value>文本来源</value></data>
+  <data name="PodcastTranscriptionRefreshText.Text" xml:space="preserve"><value>刷新状态</value></data>
+  <data name="PodcastTranscriptionNoPodcast" xml:space="preserve"><value>当前没有正在播放的播客</value></data>
+  <data name="PodcastTranscriptionNoPodcastSummary" xml:space="preserve"><value>请先在 IKUN Music 中播放一期播客。</value></data>
+  <data name="PodcastTranscriptionSourceAi" xml:space="preserve"><value>AI 逐字稿</value></data>
   <data name="LyricsSharePagePreviousPage" xml:space="preserve"><value>&#x4E0A;&#x4E00;&#x5F20;&#x5206;&#x4EAB;&#x9875;</value></data>
   <data name="LyricsSharePageNextPage" xml:space="preserve"><value>&#x4E0B;&#x4E00;&#x5F20;&#x5206;&#x4EAB;&#x9875;</value></data>
   <data name="LyricsSharePageSaveAllPages.Text" xml:space="preserve"><value>保存全部页</value></data>

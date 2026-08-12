@@ -2556,6 +2556,61 @@
   <data name="WindowSettingsControlTheme.Header" xml:space="preserve">
     <value>Window Theme</value>
   </data>
+  <data name="PodcastTranscriptionTitle.Text" xml:space="preserve"><value>Podcast transcription</value></data>
+  <data name="PodcastTranscriptionStageLabel.Text" xml:space="preserve"><value>Stage</value></data>
+  <data name="PodcastTranscriptionModelLabel.Text" xml:space="preserve"><value>Model</value></data>
+  <data name="PodcastTranscriptionModelStateLabel.Text" xml:space="preserve"><value>Model status</value></data>
+  <data name="PodcastTranscriptionSourceLabel.Text" xml:space="preserve"><value>Transcript source</value></data>
+  <data name="PodcastTranscriptionRefresh.Content" xml:space="preserve"><value>Refresh transcription status</value></data>
+  <data name="PodcastTranscriptionOpenDetails.Content" xml:space="preserve"><value>Open transcription details</value></data>
+  <data name="PodcastTranscriptionWaiting" xml:space="preserve"><value>Waiting for status</value></data>
+  <data name="PodcastTranscriptionWaitingSummary" xml:space="preserve"><value>IKUN has not reported a transcription status yet.</value></data>
+  <data name="PodcastTranscriptionUnknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="PodcastTranscriptionNotRequired" xml:space="preserve"><value>Not required</value></data>
+  <data name="PodcastTranscriptionStageIdle" xml:space="preserve"><value>Not started</value></data>
+  <data name="PodcastTranscriptionStageQueued" xml:space="preserve"><value>Queued</value></data>
+  <data name="PodcastTranscriptionStageDownloadingAudio" xml:space="preserve"><value>Downloading audio</value></data>
+  <data name="PodcastTranscriptionStagePreparingModel" xml:space="preserve"><value>Preparing ASR model</value></data>
+  <data name="PodcastTranscriptionStageConvertingAudio" xml:space="preserve"><value>Converting audio</value></data>
+  <data name="PodcastTranscriptionStageRecognizing" xml:space="preserve"><value>Recognizing speech</value></data>
+  <data name="PodcastTranscriptionStageSaving" xml:space="preserve"><value>Saving transcript</value></data>
+  <data name="PodcastTranscriptionStageCompleted" xml:space="preserve"><value>Completed</value></data>
+  <data name="PodcastTranscriptionStageFailed" xml:space="preserve"><value>Failed</value></data>
+  <data name="PodcastTranscriptionModelStateNotRequired" xml:space="preserve"><value>Not required</value></data>
+  <data name="PodcastTranscriptionModelStateChecking" xml:space="preserve"><value>Checking</value></data>
+  <data name="PodcastTranscriptionModelStateNotInstalled" xml:space="preserve"><value>Not installed</value></data>
+  <data name="PodcastTranscriptionModelStateDownloading" xml:space="preserve"><value>Downloading</value></data>
+  <data name="PodcastTranscriptionModelStateReady" xml:space="preserve"><value>Ready</value></data>
+  <data name="PodcastTranscriptionModelStateError" xml:space="preserve"><value>Error</value></data>
+  <data name="PodcastTranscriptionSourcePublisher" xml:space="preserve"><value>Publisher transcript</value></data>
+  <data name="PodcastTranscriptionSourceAsr" xml:space="preserve"><value>Local ASR</value></data>
+  <data name="PodcastTranscriptionReady" xml:space="preserve"><value>Transcript ready</value></data>
+  <data name="PodcastTranscriptionPublisherReadySummary" xml:space="preserve"><value>Using the transcript supplied by the podcast publisher.</value></data>
+  <data name="PodcastTranscriptionAsrReadySummary" xml:space="preserve"><value>Local speech recognition has finished.</value></data>
+  <data name="PodcastTranscriptionFailed" xml:space="preserve"><value>Transcription failed</value></data>
+  <data name="PodcastTranscriptionFailedSummary" xml:space="preserve"><value>Review the error below, then retry.</value></data>
+  <data name="PodcastTranscriptionWorkingSummary" xml:space="preserve"><value>IKUN is preparing time-synced podcast text.</value></data>
+  <data name="PodcastTranscriptionStart" xml:space="preserve"><value>Start transcription</value></data>
+  <data name="PodcastTranscriptionWorking" xml:space="preserve"><value>Transcribing</value></data>
+  <data name="PodcastTranscriptionRetry" xml:space="preserve"><value>Retry transcription</value></data>
+  <data name="PodcastTranscriptionRestart" xml:space="preserve"><value>Transcribe again</value></data>
+  <data name="PodcastTranscriptionRestartTitle" xml:space="preserve"><value>Transcribe this podcast again?</value></data>
+  <data name="PodcastTranscriptionRestartDescription" xml:space="preserve"><value>The existing local ASR transcript will be replaced after recognition finishes.</value></data>
+  <data name="PodcastTranscriptionRefreshFailed" xml:space="preserve"><value>Unable to refresh transcription status</value></data>
+  <data name="PodcastTranscriptionActionFailed" xml:space="preserve"><value>Unable to control transcription</value></data>
+  <data name="SettingsPagePodcastTranscription" xml:space="preserve"><value>Podcast transcription</value></data>
+  <data name="PodcastTranscriptionSettingsTitle.Text" xml:space="preserve"><value>Podcast transcription</value></data>
+  <data name="PodcastTranscriptionSettingsDescription.Text" xml:space="preserve"><value>View IKUN Music's local transcription progress and model status, and control the current podcast task.</value></data>
+  <data name="PodcastTranscriptionCurrentPodcast.Header" xml:space="preserve"><value>Current podcast</value></data>
+  <data name="PodcastTranscriptionCurrentStatus.Header" xml:space="preserve"><value>Transcription status</value></data>
+  <data name="PodcastTranscriptionStageCard.Header" xml:space="preserve"><value>Stage</value></data>
+  <data name="PodcastTranscriptionModelCard.Header" xml:space="preserve"><value>Model</value></data>
+  <data name="PodcastTranscriptionModelStateCard.Header" xml:space="preserve"><value>Model status</value></data>
+  <data name="PodcastTranscriptionSourceCard.Header" xml:space="preserve"><value>Transcript source</value></data>
+  <data name="PodcastTranscriptionRefreshText.Text" xml:space="preserve"><value>Refresh status</value></data>
+  <data name="PodcastTranscriptionNoPodcast" xml:space="preserve"><value>No podcast is playing</value></data>
+  <data name="PodcastTranscriptionNoPodcastSummary" xml:space="preserve"><value>Start a podcast in IKUN Music first.</value></data>
+  <data name="PodcastTranscriptionSourceAi" xml:space="preserve"><value>AI transcript</value></data>
   <data name="LyricsSharePagePreviousPage" xml:space="preserve"><value>Previous share page</value></data>
   <data name="LyricsSharePageNextPage" xml:space="preserve"><value>Next share page</value></data>
   <data name="LyricsSharePageSaveAllPages.Text" xml:space="preserve"><value>Save all pages</value></data>
