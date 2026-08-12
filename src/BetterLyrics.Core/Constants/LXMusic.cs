@@ -3,7 +3,7 @@
     public static class LXMusic
     {
         public const string DefaultServer = "http://127.0.0.1:23330";
-        public const string QuerySuffix = "/subscribe-player-status?filter=progress,duration,picUrl,mediaKind,contentId,transcript";
+        public const string QuerySuffix = "/subscribe-player-status?filter=progress,duration,picUrl,mediaKind,contentId,transcript,longFormContent";
 
         public static string ResolveServer(string? configuredServer)
         {

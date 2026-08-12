@@ -19,6 +19,8 @@ namespace BetterLyrics.Core.Serialization
     [JsonSerializable(typeof(LayoutProfile))]
     [JsonSerializable(typeof(PodcastTranscriptDescriptor))]
     [JsonSerializable(typeof(PodcastTranscriptDelta))]
+    [JsonSerializable(typeof(PodcastLongFormContentDescriptor))]
+    [JsonSerializable(typeof(PodcastLongFormContentDocument))]
     [JsonSourceGenerationOptions(WriteIndented = true)]
     public partial class SourceGenerationContext : JsonSerializerContext { }
 }
