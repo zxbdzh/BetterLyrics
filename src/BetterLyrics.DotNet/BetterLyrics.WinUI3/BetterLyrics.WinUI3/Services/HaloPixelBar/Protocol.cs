@@ -70,6 +70,10 @@ public static class Protocol
     public static bool FitsSinglePacket(string text) =>
         Encoding.UTF8.GetByteCount(text) <= TextByteBudget;
 
+    // HID 的高 16 位是无符号 Usage Page，先转 int 会让厂商页面右移后变成负数。
+    public static bool MatchesDeviceUsagePage(uint usage) =>
+        (usage >> 16) == DeviceUsagePage;
+
     public static int DisplayWidth(string text)
     {
         var width = 0;

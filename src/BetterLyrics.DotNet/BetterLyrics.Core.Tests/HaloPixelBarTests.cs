@@ -8,6 +8,18 @@ namespace BetterLyrics.Core.Tests;
 
 public class HaloPixelBarTests
 {
+    [Theory]
+    [InlineData(0xFF140000u, true)]
+    [InlineData(0xFF140001u, true)]
+    [InlineData(0xFF14FFFFu, true)]
+    [InlineData(0xFF130001u, false)]
+    [InlineData(0x00010001u, false)]
+    [InlineData(0xFFFF0001u, false)]
+    public void MatchesOnlyHaloUsagePage(uint usage, bool expected)
+    {
+        Assert.Equal(expected, Protocol.MatchesDeviceUsagePage(usage));
+    }
+
     [Fact]
     public void TextPacketPreservesTheDeviceWireFormat()
     {

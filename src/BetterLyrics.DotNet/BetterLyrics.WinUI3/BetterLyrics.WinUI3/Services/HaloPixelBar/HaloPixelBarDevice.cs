@@ -23,8 +23,7 @@ public sealed class HaloPixelBarDevice : IHaloPixelBarDevice
                 (device.GetProductName() ?? "").Contains(Protocol.DeviceName) &&
                 device.GetMaxOutputReportLength() > 0 &&
                 device.GetReportDescriptor().DeviceItems.Any(item =>
-                    item.Usages.GetAllValues().Any(usage =>
-                        ((int)usage >> 16) == Protocol.DeviceUsagePage)));
+                    item.Usages.GetAllValues().Any(Protocol.MatchesDeviceUsagePage)));
         }
         catch
         {
