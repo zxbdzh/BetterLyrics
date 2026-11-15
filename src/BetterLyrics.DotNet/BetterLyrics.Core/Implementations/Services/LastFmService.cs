@@ -85,11 +85,20 @@ public class LastFmService : ILastFmService
 
     public async Task AuthAsync()
     {
-        var url = await _client.GetWebAuthenticationUrlAsync();
+        try
+        {
+            var url = await _client.GetWebAuthenticationUrlAsync();
 
-        _ = _launcherProvider.LaunchUriAsync(new Uri(url));
+            // 启动器任务也可能失败，必须等待它并纳入本次登录异常处理。
+            await _launcherProvider.LaunchUriAsync(new Uri(url));
 
-        await _lastFmDialogProvider.ShowAuthDialogAsync(ConfirmAuthAsync);
+            await _lastFmDialogProvider.ShowAuthDialogAsync(ConfirmAuthAsync);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start Last.fm authentication.");
+            _globalToastProvider.Show("LastFMAuthFailed", ex.Message, MessageSeverity.Error);
+        }
     }
 
     public async Task UnAuthAsync()
