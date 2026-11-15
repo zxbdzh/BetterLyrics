@@ -53,6 +53,7 @@ public class SettingsService : ISettingsService
         AppSettings.SystemTraySettings.PropertyChanged += AppSettings_PropertyChanged;
         AppSettings.LyricsCardSettings.PropertyChanged += AppSettings_PropertyChanged;
         AppSettings.DiscordSettings.PropertyChanged += AppSettings_PropertyChanged;
+        AppSettings.HaloPixelBarSettings.PropertyChanged += AppSettings_PropertyChanged;
 
         AppSettings.MediaSourceProvidersInfo.CollectionChanged += AppSettings_CollectionChanged;
         AppSettings.MediaSourceProvidersInfo.ItemPropertyChanged += AppSettings_ItemPropertyChanged;

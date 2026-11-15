@@ -17,6 +17,8 @@ public class LyricsData
 
     public List<LyricsLine> LyricsLines { get; set; } = [];
 
+    public bool IsPlaceholder { get; init; }
+
     public LanguageTag? LanguageTag
     {
         get => field ?? LanguageHelper.DetectLanguageTag(LyricsLines.Select(line => line.PrimaryText));

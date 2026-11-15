@@ -16,6 +16,7 @@ public static class LyricsDataExtensions
             var loadingText = _localizationService.GetLocalizedString("LyricsLoading") + (showStatus ? $" ({attempt}/{maxRetries})" : "");
             return new LyricsData
             {
+                IsPlaceholder = true,
                 LyricsLines =
                 [
                     new LyricsLine
@@ -124,5 +125,5 @@ public static class LyricsDataExtensions
                 }
             ]
         }
-    ]);
+    ]) { IsPlaceholder = true };
 }

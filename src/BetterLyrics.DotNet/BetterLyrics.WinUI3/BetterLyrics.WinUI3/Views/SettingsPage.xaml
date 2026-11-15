@@ -115,6 +115,9 @@
                     <controls:Case Value="{x:Bind enums:SettingsSection.Plugins}">
                         <uc:PluginManagerControl />
                     </controls:Case>
+                    <controls:Case Value="{x:Bind enums:SettingsSection.HaloPixelBar}">
+                        <uc:HaloPixelBarSettingsControl />
+                    </controls:Case>
                     <controls:Case Value="{x:Bind enums:SettingsSection.About}">
                         <uc:AboutControl />
                     </controls:Case>

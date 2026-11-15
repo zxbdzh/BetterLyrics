@@ -7,5 +7,6 @@ public enum SettingsSection
     MediaLib,
     PlaybackLib,
     Plugins,
-    About
+    About,
+    HaloPixelBar
 }

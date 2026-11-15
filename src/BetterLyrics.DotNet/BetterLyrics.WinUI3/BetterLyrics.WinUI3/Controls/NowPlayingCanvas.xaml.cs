@@ -2100,6 +2100,10 @@ public sealed partial class NowPlayingCanvas : BaseUserControl,
         if (diff >= timelineSyncThreshold)
         {
             _songPosition = realPosition;
+            // 暂停时不会推进动画时间，同一次校准也要更新带歌词偏移的位置。
+            _songPositionWithOffset = realPosition +
+                                      TimeSpan.FromMilliseconds(
+                                          _gsmtcService.CurrentMediaSourceProviderInfo?.PositionOffset ?? 0);
         }
 
         if (diff >= timelineSyncThreshold + 5000)

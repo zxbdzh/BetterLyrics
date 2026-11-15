@@ -1,32 +1,40 @@
 ﻿// 2025/6/23 by Zhe Fang
 
+using System.Text;
+
 namespace BetterLyrics.Core.Models.Lyrics;
 
 public class LyricsLine : BaseLyrics
 {
     public new int StartIndex = 0;
 
-    public LyricsLine()
+    public void RebuildPrimaryChars()
     {
-        for (var charStartIndex = 0; charStartIndex < PrimaryText.Length; charStartIndex++)
+        PrimaryChars.Clear();
+
+        // 音节在对象初始化后才填入，必须等解析和时长补全结束后再生成字符时间轴。
+        foreach (var syllable in PrimarySyllables.OrderBy(item => item.StartIndex))
         {
-            var syllable =
-                PrimarySyllables.FirstOrDefault(x => x.StartIndex <= charStartIndex && charStartIndex <= x.EndIndex);
-            if (syllable == null) continue;
+            var startIndex = Math.Clamp(syllable.StartIndex, 0, PrimaryText.Length);
+            var length = Math.Min(syllable.Length, PrimaryText.Length - startIndex);
+            if (length == 0) continue;
 
-            var avgCharDuration = syllable.DurationMs / syllable.Length;
-            if (avgCharDuration == 0) continue;
-
-            var charStartMs = syllable.StartMs + (charStartIndex - syllable.StartIndex) * avgCharDuration;
-            var charEndMs = charStartMs + avgCharDuration;
-
-            PrimaryChars.Add(new BaseLyrics
+            var duration = Math.Max(syllable.DurationMs, length);
+            var offset = 0;
+            foreach (var rune in PrimaryText.Substring(startIndex, length).EnumerateRunes())
             {
-                StartIndex = charStartIndex,
-                StartMs = charStartMs,
-                EndMs = charEndMs,
-                Text = PrimaryText[charStartIndex].ToString()
-            });
+                var startMs = syllable.StartMs + (int)((long)duration * offset / length);
+                var endMs = syllable.StartMs +
+                            (int)((long)duration * (offset + rune.Utf16SequenceLength) / length);
+                PrimaryChars.Add(new BaseLyrics
+                {
+                    StartIndex = startIndex + offset,
+                    StartMs = startMs,
+                    EndMs = Math.Max(startMs + 1, endMs),
+                    Text = rune.ToString()
+                });
+                offset += rune.Utf16SequenceLength;
+            }
         }
     }
 

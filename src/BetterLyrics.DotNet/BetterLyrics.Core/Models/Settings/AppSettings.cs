@@ -33,6 +33,9 @@ public partial class AppSettings : ObservableObject
     public partial DiscordSettings DiscordSettings { get; set; } = new();
 
     [ObservableProperty]
+    public partial HaloPixelBarSettings HaloPixelBarSettings { get; set; } = new();
+
+    [ObservableProperty]
     public partial FullyObservableCollection<MediaFolder> LocalMediaFolders { get; set; } = [];
 
     [ObservableProperty]

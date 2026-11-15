@@ -92,6 +92,12 @@ public partial class SettingsPageViewModel : ObservableRecipient, ISingletonView
         });
         NavItems.Add(new SettingsNavMenuItem
         {
+            Label = "花再 Halo PixelBar",
+            Glyph = "\uE7F4",
+            Section = SettingsSection.HaloPixelBar
+        });
+        NavItems.Add(new SettingsNavMenuItem
+        {
             Label = _localizationService.GetLocalizedString("SettingsPageAbout"),
             Glyph = "\uE946",
             Section = SettingsSection.About
@@ -161,6 +167,8 @@ public partial class SettingsPageViewModel : ObservableRecipient, ISingletonView
 
     private string GetLocalizedSectionName(SettingsSection section)
     {
+        if (section == SettingsSection.HaloPixelBar) return "花再 Halo PixelBar";
+
         string sectionUid = section switch
         {
             SettingsSection.App => "SettingsPageApp",

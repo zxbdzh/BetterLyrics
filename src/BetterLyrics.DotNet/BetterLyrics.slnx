@@ -21,5 +21,10 @@
         </Project>
     </Folder>
     <Project Path="BetterLyrics.Core/BetterLyrics.Core.csproj" />
+    <Project Path="BetterLyrics.Core.Tests/BetterLyrics.Core.Tests.csproj">
+        <Platform Solution="*|ARM64" Project="Any CPU" />
+        <Platform Solution="*|x64" Project="Any CPU" />
+        <Platform Solution="*|x86" Project="Any CPU" />
+    </Project>
     <Project Path="BetterLyrics.Sdk/BetterLyrics.Sdk.csproj" Id="3ef420c2-f617-4ad4-9f40-483e9b7fe27c" />
 </Solution>

@@ -15,7 +15,9 @@ using BetterLyrics.Core.ViewModels.MusicGalleryPageViewModel;
 using BetterLyrics.WinUI3.Logging;
 using BetterLyrics.WinUI3.Providers;
 using BetterLyrics.WinUI3.Services;
+using BetterLyrics.WinUI3.Services.HaloPixelBar;
 using BetterLyrics.WinUI3.UITest;
+using BetterLyrics.WinUI3.ViewModels;
 using BetterLyrics.WinUI3.Views;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,7 +54,7 @@ public class Program
     {
         ComWrappersSupport.InitializeComWrappers();
         UiTestSession.Initialize(args);
-        var isRedirect = DecideRedirection();
+        var isRedirect = DecideRedirection(out var activationArgs);
 
         if (!isRedirect)
         {
@@ -76,8 +78,10 @@ public class Program
 
                 _ = new App();
 
-                var args = AppInstance.GetCurrent().GetActivatedEventArgs();
-                HandleActivation(args, true);
+                if (activationArgs != null)
+                {
+                    HandleActivation(activationArgs, true);
+                }
             });
 
             // 正常关闭（非 ExitApp 路径）时释放容器；DisposeServices 可重复调用
@@ -87,31 +91,35 @@ public class Program
         return 0;
     }
 
-    private static bool DecideRedirection()
+    private static bool DecideRedirection(out AppActivationArguments? activationArgs)
     {
-        var isRedirect = false;
-        var args = AppInstance.GetCurrent().GetActivatedEventArgs();
-        var kind = args.Kind;
-
-        // Run the UI test host as an independent instance so it does not get
-        // redirected into a user instance that cannot accept test arguments.
-        var instanceKey = UiTestSession.IsEnabled
-            ? $"BetterLyrics.UiTest.{Environment.ProcessId}"
-            : "MySingleInstanceApp";
-
-        var keyInstance = AppInstance.FindOrRegisterForKey(instanceKey);
-
-        if (keyInstance.IsCurrent)
+        activationArgs = null;
+        try
         {
-            keyInstance.Activated += OnActivated;
-        }
-        else
-        {
-            isRedirect = true;
-            RedirectActivationTo(args, keyInstance);
-        }
+            activationArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
 
-        return isRedirect;
+            // 保留官方测试实例隔离，兼容处理只针对未注册的 AppLifecycle。
+            var instanceKey = UiTestSession.IsEnabled
+                ? $"BetterLyrics.UiTest.{Environment.ProcessId}"
+                : "MySingleInstanceApp";
+
+            var keyInstance = AppInstance.FindOrRegisterForKey(instanceKey);
+
+            if (keyInstance.IsCurrent)
+            {
+                keyInstance.Activated += OnActivated;
+                return false;
+            }
+
+            RedirectActivationTo(activationArgs, keyInstance);
+            return true;
+        }
+        catch (COMException exception) when (exception.HResult == unchecked((int)0x80040154))
+        {
+            // 便携启动缺少注册时降级为普通启动，不吞掉其他激活错误。
+            activationArgs = null;
+            return false;
+        }
     }
 
     private static void OnActivated(object? sender, AppActivationArguments args)
@@ -308,6 +316,7 @@ public class Program
             .AddSingleton<IWallpaperEngineService, WallpaperEngineService>()
             .AddSingleton<ILyricsWindowVisibilityService, LyricsWindowVisibilityService>()
             .AddSingleton<IWallpaperEngineLyricsWindowService, WallpaperEngineLyricsWindowService>()
+            .AddSingleton<HaloPixelBarService>()
 
             // Providers
             .AddSingleton<IPasswordVaultProvider, PasswordVaultProvider>()
@@ -341,6 +350,7 @@ public class Program
 
             // 视图级实例：每个 Window/Page/Control 生命周期内独立，随视图创建与释放
             .AddTransient<AppSettingsControlViewModel>()
+            .AddTransient<HaloPixelBarSettingsControlViewModel>()
             .AddTransient<PlaybackSettingsControlViewModel>()
             .AddTransient<MediaSettingsControlViewModel>()
             .AddTransient<LyricsWindowManagerControlViewModel>()

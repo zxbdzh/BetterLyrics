@@ -81,7 +81,15 @@ public partial class App : Application
 
             if (!UiTestSession.IsEnabled && settingsService.AppSettings.GeneralSettings.ShowSplashScreen)
             {
-                _splashScreen = SimpleSplashScreen.ShowDefaultSplashScreen();
+                try
+                {
+                    _splashScreen = SimpleSplashScreen.ShowDefaultSplashScreen();
+                }
+                catch (Exception exception)
+                {
+                    // 启动屏属于可选界面，初始化失败不应中断播放器启动。
+                    _logger.LogWarning(exception, "Unable to show the optional splash screen; continuing startup.");
+                }
             }
 
             var globalToastProvider = Ioc.Default.GetRequiredService<IGlobalToastProvider>();
@@ -227,6 +235,8 @@ public partial class App : Application
         // 加载插件
         var pluginService = Ioc.Default.GetRequiredService<IPluginService>();
         await pluginService.LoadPluginsAsync();
+
+        Ioc.Default.GetRequiredService<Services.HaloPixelBar.HaloPixelBarService>().Start();
 
         // 确保播放源配置内歌词源与插件保持最新
         EnsureLyricsSearchProvidersInfo();

@@ -72,6 +72,10 @@ public partial class LyricsContentParser
 
         EnsureSyllables(lyricsSearchResult?.Duration);
         EnsureEndMs(lyricsSearchResult?.Duration);
+        foreach (var line in LyricsDataArr.SelectMany(data => data.LyricsLines))
+        {
+            line.RebuildPrimaryChars();
+        }
 
         return LyricsDataArr;
     }

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<local:BaseUserControl
+    x:Class="BetterLyrics.WinUI3.Controls.HaloPixelBarSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:local="using:BetterLyrics.WinUI3.Controls">
+    <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
+        <Grid Style="{StaticResource SettingsGridStyle}">
+            <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+                <TextBlock Text="花再 Halo PixelBar" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                <controls:SettingsCard Header="启用花再音响歌词" Description="连接花再 Halo PixelBar 显示实时歌词">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.Enable, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <StackPanel Spacing="{StaticResource SettingsCardSpacing}"
+                    Visibility="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.Enable, Mode=OneWay}">
+                    <controls:SettingsCard Header="设备状态">
+                        <TextBlock Text="{x:Bind ViewModel.DeviceStatusText, Mode=OneWay}" />
+                    </controls:SettingsCard>
+                    <controls:SettingsCard Header="歌词显示模式">
+                        <ComboBox SelectedIndex="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.LyricMode, Mode=TwoWay}">
+                            <ComboBoxItem Content="原文" />
+                            <ComboBoxItem Content="翻译" />
+                            <ComboBoxItem Content="罗马音" />
+                        </ComboBox>
+                    </controls:SettingsCard>
+                    <controls:SettingsCard Header="显示位置" Description="歌词在音响屏幕上的对齐方式">
+                        <ComboBox SelectedIndex="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.TextAlignment, Mode=TwoWay}">
+                            <ComboBoxItem Content="居中" />
+                            <ComboBoxItem Content="左对齐" />
+                            <ComboBoxItem Content="右对齐" />
+                        </ComboBox>
+                    </controls:SettingsCard>
+                    <TextBlock Text="显示效果" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                    <controls:SettingsExpander Header="自动滚动" Description="长文本超过阈值时自动滚动显示"
+                        IsExpanded="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.AutoScroll, Mode=OneWay}">
+                        <ToggleSwitch IsOn="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.AutoScroll, Mode=TwoWay}" />
+                        <controls:SettingsExpander.Items>
+                            <controls:SettingsCard Header="滚动阈值" Description="超过此显示宽度时触发滚动">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="−" Command="{x:Bind ViewModel.AdjustScrollThresholdCommand}" CommandParameter="-5" />
+                                    <TextBlock Text="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.ScrollThreshold, Mode=OneWay}"
+                                        VerticalAlignment="Center" MinWidth="30" TextAlignment="Center" />
+                                    <Button Content="+" Command="{x:Bind ViewModel.AdjustScrollThresholdCommand}" CommandParameter="5" />
+                                </StackPanel>
+                            </controls:SettingsCard>
+                        </controls:SettingsExpander.Items>
+                    </controls:SettingsExpander>
+                    <controls:SettingsExpander Header="交替显示" Description="长歌词分为前后半段交替显示，与自动滚动互斥"
+                        IsExpanded="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.AlternateSplit, Mode=OneWay}">
+                        <ToggleSwitch IsOn="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.AlternateSplit, Mode=TwoWay}" />
+                        <controls:SettingsExpander.Items>
+                            <controls:SettingsCard Header="交替间隔" Description="前后半段切换的时间间隔，单位毫秒">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="−" Command="{x:Bind ViewModel.AdjustAlternateIntervalCommand}" CommandParameter="-500" />
+                                    <TextBlock Text="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.AlternateInterval, Mode=OneWay}"
+                                        VerticalAlignment="Center" MinWidth="50" TextAlignment="Center" />
+                                    <Button Content="+" Command="{x:Bind ViewModel.AdjustAlternateIntervalCommand}" CommandParameter="500" />
+                                </StackPanel>
+                            </controls:SettingsCard>
+                        </controls:SettingsExpander.Items>
+                    </controls:SettingsExpander>
+                    <controls:SettingsCard Header="同步歌词时间轴" Description="有逐字时间戳时跟随播放进度，独立于普通逐字开关">
+                        <ToggleSwitch IsOn="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.TypewriterSync, Mode=TwoWay}" />
+                    </controls:SettingsCard>
+                    <controls:SettingsCard Header="延迟补偿" Description="同步显示的时间偏移，正值提前显示，单位毫秒">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="−" Command="{x:Bind ViewModel.AdjustLatencyCompCommand}" CommandParameter="-20" />
+                            <TextBlock Text="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.LatencyCompMs, Mode=OneWay}"
+                                VerticalAlignment="Center" MinWidth="50" TextAlignment="Center" />
+                            <Button Content="+" Command="{x:Bind ViewModel.AdjustLatencyCompCommand}" CommandParameter="20" />
+                        </StackPanel>
+                    </controls:SettingsCard>
+                    <controls:SettingsExpander Header="逐字显示" Description="没有逐字时间戳时按指定速度依次显示"
+                        IsExpanded="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.Typewriter, Mode=OneWay}">
+                        <ToggleSwitch IsOn="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.Typewriter, Mode=TwoWay}" />
+                        <controls:SettingsExpander.Items>
+                            <controls:SettingsCard Header="逐字速度" Description="非同步模式下每个字符的显示间隔，单位毫秒">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="−" Command="{x:Bind ViewModel.AdjustTypewriterSpeedCommand}" CommandParameter="-20" />
+                                    <TextBlock Text="{x:Bind ViewModel.AppSettings.HaloPixelBarSettings.TypewriterSpeed, Mode=OneWay}"
+                                        VerticalAlignment="Center" MinWidth="40" TextAlignment="Center" />
+                                    <Button Content="+" Command="{x:Bind ViewModel.AdjustTypewriterSpeedCommand}" CommandParameter="20" />
+                                </StackPanel>
+                            </controls:SettingsCard>
+                        </controls:SettingsExpander.Items>
+                    </controls:SettingsExpander>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</local:BaseUserControl>
