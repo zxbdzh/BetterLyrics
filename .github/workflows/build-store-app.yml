@@ -113,6 +113,16 @@ jobs:
           if ($missingSecrets.Count -gt 0) {
             throw "Missing integration secrets: $($missingSecrets -join ', ')"
           }
+          # 模板占位值也能通过编译，必须在生成常量前拦截，避免交付无法登录的安装包。
+          $lastFmPlaceholders = @{
+            LASTFM_API_KEY = 'Your api key here'
+            LASTFM_SHARED_SECRET = 'Your shared secret here'
+          }
+          foreach ($name in $lastFmPlaceholders.Keys) {
+            if ($integrationSecrets[$name].Trim() -eq $lastFmPlaceholders[$name]) {
+              throw "Repository secret $name contains a template placeholder. Configure valid Last.fm application credentials before building."
+            }
+          }
           function ConvertTo-CSharpStringLiteral([string]$value) {
             return '"' + $value.Replace('\', '\\').Replace('"', '\"') + '"'
           }
@@ -172,6 +182,9 @@ jobs:
         shell: pwsh
         env:
           PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
+          DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_SHARED_SECRET: ${{ secrets.LASTFM_SHARED_SECRET }}
         run: |
           New-Item -ItemType Directory -Path $env:RELEASE_DIR -Force | Out-Null
           $package = Get-ChildItem -LiteralPath $env:PACKAGE_DIR -Recurse -File -Filter '*.msix' |
@@ -212,6 +225,8 @@ jobs:
               $identity.GetAttribute('ProcessorArchitecture') -ne 'x64') {
             throw 'The generated MSIX identity does not match the release configuration.'
           }
+          & (Join-Path $env:GITHUB_WORKSPACE '.github\scripts\Test-PackageIntegrations.ps1') `
+            -PackagePath $releasePackage
           $hash = Get-FileHash -LiteralPath $releasePackage -Algorithm SHA256
           "$($hash.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($releasePackage))" |
             Set-Content -LiteralPath (Join-Path $env:RELEASE_DIR 'SHA256SUMS.txt') -Encoding ascii
