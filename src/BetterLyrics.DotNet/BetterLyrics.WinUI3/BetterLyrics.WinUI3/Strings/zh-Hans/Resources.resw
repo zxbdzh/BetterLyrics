@@ -1674,6 +1674,12 @@
   <data name="SettingsPageLXMusicServerInput.PlaceholderText" xml:space="preserve">
     <value>例如：http://127.0.0.1:23330</value>
   </data>
+  <data name="SettingsPageOhMyGoMusicServer.Header" xml:space="preserve">
+    <value>Oh MyGo Music 服务器</value>
+  </data>
+  <data name="SettingsPageOhMyGoMusicServerInput.PlaceholderText" xml:space="preserve">
+    <value>例如：http://127.0.0.1:23332</value>
+  </data>
   <data name="SettingsPageLyricsAlignment.Header" xml:space="preserve">
     <value>对齐方式</value>
   </data>

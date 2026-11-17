@@ -1674,6 +1674,12 @@
   <data name="SettingsPageLXMusicServerInput.PlaceholderText" xml:space="preserve">
     <value>e.g. http://127.0.0.1:23330</value>
   </data>
+  <data name="SettingsPageOhMyGoMusicServer.Header" xml:space="preserve">
+    <value>Oh MyGo Music Server</value>
+  </data>
+  <data name="SettingsPageOhMyGoMusicServerInput.PlaceholderText" xml:space="preserve">
+    <value>e.g. http://127.0.0.1:23332</value>
+  </data>
   <data name="SettingsPageLyricsAlignment.Header" xml:space="preserve">
     <value>Alignment</value>
   </data>

@@ -34,6 +34,13 @@ public static class PlayerIdHelper
         "lx-music-desktop.exe"
     ];
 
+    private static readonly List<string> _ohMyGoMusicRegex =
+    [
+        // 开发启动器使用独立名称和 App ID，同样需要启用歌词与进度直连。
+        "(?i)^MyGo Music(?: Dev)?\\.exe$",
+        "(?i)^dev\\.egoist\\.music(?:\\.dev)?$"
+    ];
+
     private static bool Is(string? id, List<string> regexes)
     {
         if (id is null) return false;
@@ -60,6 +67,11 @@ public static class PlayerIdHelper
     public static bool IsLXMusic(string? id)
     {
         return Is(id, _lxMusicRegex);
+    }
+
+    public static bool IsOhMyGoMusic(string? id)
+    {
+        return Is(id, _ohMyGoMusicRegex);
     }
 
     public static bool IsAppleMusic(string? id)

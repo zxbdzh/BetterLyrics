@@ -75,6 +75,7 @@ public static class SettingSearchItemExtensions
         new SettingSearchItem { Uid = "SettingsPageLastFMTrack/Header", Section = SettingsSection.PlaybackLib, Subsection = PlaybackLibSettingsSection.General },
         new SettingSearchItem { Uid = "SettingsPageDiscordPresence/Header", Section = SettingsSection.PlaybackLib, Subsection = PlaybackLibSettingsSection.General },
         new SettingSearchItem { Uid = "SettingsPageLXMusicServer/Header", Section = SettingsSection.PlaybackLib, Subsection = PlaybackLibSettingsSection.General },
+        new SettingSearchItem { Uid = "SettingsPageOhMyGoMusicServer/Header", Section = SettingsSection.PlaybackLib, Subsection = PlaybackLibSettingsSection.General },
 
         new SettingSearchItem { Uid = "SettingsPageLyricsTimeline/Header", Section = SettingsSection.PlaybackLib, Subsection = PlaybackLibSettingsSection.General },
         new SettingSearchItem { Uid = "SettingsPageLyricsTimelineThreshold/Header", Section = SettingsSection.PlaybackLib, Subsection = PlaybackLibSettingsSection.General, ParentUid = "SettingsPageLyricsTimeline/Header" },

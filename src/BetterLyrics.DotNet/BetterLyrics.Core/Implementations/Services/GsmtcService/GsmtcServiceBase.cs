@@ -12,6 +12,7 @@ using BetterLyrics.Core.Messages.LyricsWindow;
 using BetterLyrics.Core.Messages.MediaLibrary;
 using BetterLyrics.Core.Messages.Playback;
 using BetterLyrics.Core.Models;
+using BetterLyrics.Core.Models.Http;
 using BetterLyrics.Core.Models.Memory;
 using BetterLyrics.Core.Models.Settings;
 using BetterLyrics.Core.Serialization;
@@ -29,7 +30,8 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
     IRecipient<TranslationSettingsChangedMessage>,
     IRecipient<MediaFolderEnabledChangedMessage>,
     IRecipient<MediaFolderLastSyncTimeChangedMessage>,
-    IRecipient<MediaSourceTargetAlbumArtSizeChangedMessage>
+    IRecipient<MediaSourceTargetAlbumArtSizeChangedMessage>,
+    IRecipient<OhMyGoMusicServerChangedMessage>
 {
     protected readonly IAlbumArtSearchService _albumArtSearchService;
     protected readonly IAppUIThreadProvider _appUIThreadProvider;
@@ -54,6 +56,9 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
 
     private double _lxMusicPositionSeconds;
     private EventSourceReader? _lxMusicSse;
+    private EventSourceReader? _ohMyGoMusicSse;
+    private ulong _ohMyGoMusicTrackId;
+    private bool _ohMyGoMusicLyricsReady;
     private byte[]? _smtcAlbumArtBuffer;
 
     /// <summary>
@@ -364,6 +369,14 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
         UpdateAlbumArt(true);
     }
 
+    public void Receive(OhMyGoMusicServerChangedMessage message)
+    {
+        if (!PlayerIdHelper.IsOhMyGoMusic(CurrentSongInfo.PlayerId)) return;
+        StopOhMyGoMusicSSE();
+        StartOhMyGoMusicSSE();
+        UpdateLyrics();
+    }
+
     private void LocalMediaFolders_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         UpdateAlbumArt();
@@ -633,6 +646,7 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
             UpdateCurrentMediaSourceProviderInfoPositionOffset();
             OnPresenceUpdateRequested();
             OnSongInfoApplied();
+            HandleOhMyGoMusicIfDetected(sessionId);
 
             UpdateLyrics();
             UpdateAlbumArt();
@@ -805,6 +819,117 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
                         }
                     }
                 }
+            }
+        });
+    }
+
+    private void HandleOhMyGoMusicIfDetected(string? sessionId)
+    {
+        if (PlayerIdHelper.IsOhMyGoMusic(sessionId))
+        {
+            StartOhMyGoMusicSSE();
+        }
+        else
+        {
+            StopOhMyGoMusicSSE();
+        }
+    }
+
+    private void StartOhMyGoMusicSSE()
+    {
+        if (_ohMyGoMusicSse != null) return;
+
+        try
+        {
+            var stream = new EventSourceReader(OhMyGoMusicClient.GetStatusStreamUri(
+                _settingsService.AppSettings.GeneralSettings.OhMyGoMusicServer));
+            stream.MessageReceived += OhMyGoMusicSse_MessageReceived;
+            stream.Disconnected += OhMyGoMusicSse_Disconnected;
+            _ohMyGoMusicSse = stream.Start();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not start the Oh MyGo Music status stream.");
+            StopOhMyGoMusicSSE();
+        }
+    }
+
+    private void StopOhMyGoMusicSSE()
+    {
+        if (_ohMyGoMusicSse is null)
+        {
+            _ohMyGoMusicTrackId = 0;
+            _ohMyGoMusicLyricsReady = false;
+            return;
+        }
+        _ohMyGoMusicSse.MessageReceived -= OhMyGoMusicSse_MessageReceived;
+        _ohMyGoMusicSse.Disconnected -= OhMyGoMusicSse_Disconnected;
+        _ohMyGoMusicSse.Dispose();
+        _ohMyGoMusicSse = null;
+        _ohMyGoMusicTrackId = 0;
+        _ohMyGoMusicLyricsReady = false;
+    }
+
+    private void OhMyGoMusicSse_Disconnected(object sender, DisconnectEventArgs e)
+    {
+        _logger.LogDebug("Oh MyGo Music status stream disconnected. Reconnecting in {Delay}.", e.ReconnectDelay);
+        if (sender is not EventSourceReader stream || stream != _ohMyGoMusicSse) return;
+        _appUIThreadProvider.RunAsync(async () =>
+        {
+            await Task.Delay(e.ReconnectDelay);
+            if (stream == _ohMyGoMusicSse && !stream.IsDisposed)
+            {
+                stream.Start();
+            }
+        });
+    }
+
+    private void OhMyGoMusicSse_MessageReceived(object sender, EventSourceMessageEventArgs e)
+    {
+        if (sender != _ohMyGoMusicSse) return;
+        if (e.Event != "status") return;
+        OhMyGoMusicStatus? status;
+        try
+        {
+            status = JsonSerializer.Deserialize(e.Message, SourceGenerationContext.Default.OhMyGoMusicStatus);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Ignoring an invalid Oh MyGo Music status event.");
+            return;
+        }
+        if (status is not OhMyGoMusicStatus snapshot) return;
+
+        _appUIThreadProvider.RunAsync(() =>
+        {
+            if (!PlayerIdHelper.IsOhMyGoMusic(CurrentSongInfo.PlayerId)) return;
+
+            // 来源歌词可以晚于音频返回，同曲目从未就绪到就绪也要替换搜索回退结果。
+            var lyricsChanged = _ohMyGoMusicTrackId != snapshot.TrackId ||
+                                snapshot.LyricsReady && !_ohMyGoMusicLyricsReady;
+            _ohMyGoMusicTrackId = snapshot.TrackId;
+            _ohMyGoMusicLyricsReady = snapshot.LyricsReady;
+            if (lyricsChanged)
+            {
+                UpdateLyrics();
+            }
+
+            if (snapshot.DurationMs > 0 && CurrentSongInfo.DurationMs != snapshot.DurationMs)
+            {
+                CurrentSongInfo.DurationMs = snapshot.DurationMs;
+                UpdateTargetScrobbledDuration();
+            }
+
+            if (CurrentIsPlaying != snapshot.Playing)
+            {
+                OnPlaybackStateApplied(snapshot.Playing);
+                CurrentIsPlaying = snapshot.Playing;
+                OnPresenceUpdateRequested();
+            }
+
+            if (IsMediaSourceTimelineSyncEnabled(CurrentSongInfo.PlayerId))
+            {
+                CurrentPosition = TimeSpan.FromMilliseconds(Math.Max(snapshot.PositionMs, 0));
             }
         });
     }

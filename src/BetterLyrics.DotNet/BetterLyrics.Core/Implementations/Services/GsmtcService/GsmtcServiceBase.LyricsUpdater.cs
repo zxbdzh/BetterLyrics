@@ -3,6 +3,7 @@ using BetterLyrics.Core.Helpers;
 using BetterLyrics.Core.Interfaces.Services;
 using BetterLyrics.Core.Messages.Playback;
 using BetterLyrics.Core.Models.Entities;
+using BetterLyrics.Core.Models.Http;
 using BetterLyrics.Core.Models.Lyrics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
@@ -15,6 +16,7 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
 {
     private readonly Debouncer _lyricsDebouncer = new();
     private readonly Debouncer _lyricsPresentationDebouncer = new();
+    private (LyricsCacheItem Result, OhMyGoMusicLyrics Source)? _ohMyGoMusicLyricsSnapshot;
 
     /// <summary>
     /// 标记本次 <see cref="CurrentLyricsData"/> 变更是否只是译文（翻译 / 音译）的显示变化
@@ -44,6 +46,10 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
             return;
         }
 
+        var sourceLyrics = _ohMyGoMusicLyricsSnapshot is { } snapshot &&
+                           ReferenceEquals(snapshot.Result, searchResult)
+            ? snapshot.Source
+            : null;
         _ = _lyricsPresentationDebouncer.RunAsync(async token =>
         {
             var lyricsParser = new LyricsContentParser();
@@ -54,6 +60,8 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
             // 解析期间歌曲或歌词源已经变化，本次结果作废
             if (!ReferenceEquals(CurrentLyricsSearchResult, searchResult)) return;
 
+            // 显示开关只重排现有歌词，不能丢失来源单独提供的逐字时间。
+            if (sourceLyrics != null) OhMyGoMusicLyricsAdapter.ApplyWordTimes(lyricsData, sourceLyrics);
             _isPresentationUpdate = true;
             try
             {
@@ -68,10 +76,32 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
 
     private async Task RefreshLyricsAsync(CancellationToken token)
     {
+        _ohMyGoMusicLyricsSnapshot = null;
         if (CurrentSongInfo != SongInfoExtensions.Placeholder)
         {
             var maxRetries = _settingsService.AppSettings.GeneralSettings.MaxAutoRetryCount;
             CurrentLyricsSearchResult = null;
+
+            if (PlayerIdHelper.IsOhMyGoMusic(CurrentSongInfo.PlayerId))
+            {
+                var sourceLyrics = await TryGetOhMyGoMusicLyricsAsync(token);
+                if (sourceLyrics != null)
+                {
+                    var cacheItem = OhMyGoMusicLyricsAdapter.ToCacheItem(sourceLyrics);
+                    if (!string.IsNullOrWhiteSpace(cacheItem.Raw))
+                    {
+                        cacheItem.CopyFromSongInfo(CurrentSongInfo);
+                        CurrentLyricsSearchResult = cacheItem;
+                        var parser = new LyricsContentParser();
+                        var lyricsData = await Task.Run(async () => await parser.ParseAsync(cacheItem, token), token);
+                        token.ThrowIfCancellationRequested();
+                        OhMyGoMusicLyricsAdapter.ApplyWordTimes(lyricsData, sourceLyrics);
+                        _ohMyGoMusicLyricsSnapshot = (cacheItem, sourceLyrics);
+                        CurrentLyricsData = lyricsData;
+                        return;
+                    }
+                }
+            }
 
             for (var attempt = 1; attempt <= maxRetries; attempt++)
             {
@@ -113,5 +143,27 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
         }
 
         if (CurrentLyricsSearchResult == null) CurrentLyricsData = LyricsDataExtensions.NotFoundPlaceholder;
+    }
+
+    private async Task<OhMyGoMusicLyrics?> TryGetOhMyGoMusicLyricsAsync(CancellationToken token)
+    {
+        var serverAddress = _settingsService.AppSettings.GeneralSettings.OhMyGoMusicServer;
+        try
+        {
+            var status = await OhMyGoMusicClient.Shared.GetStatusAsync(serverAddress, token);
+            if (status == null || status.TrackId == 0) return null;
+
+            var lyrics = await OhMyGoMusicClient.Shared.GetLyricsAsync(serverAddress, status.TrackId, token);
+            return lyrics?.TrackId == status.TrackId ? lyrics : null;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not retrieve Oh MyGo Music lyrics; using the configured lyric search providers.");
+            return null;
+        }
     }
 }

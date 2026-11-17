@@ -201,6 +201,7 @@ public partial class LyricsContentParser
                     case LyricsProvider.QQ:
                     case LyricsProvider.Kugou:
                     case LyricsProvider.Netease:
+                    case LyricsProvider.OhMyGoMusic:
                         ParseLrc(lyricsSearchResult.Translation, lyricsSearchResult.Provider, rule);
                         break;
                 }

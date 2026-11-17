@@ -101,6 +101,7 @@ public partial class MediaSourceProviderInfo : ObservableObject
         [.. Enum.GetValues<AlbumArtProvider>().Select(p => new AlbumArtSearchProviderInfo(p, true))];
 
     [JsonIgnore] public bool IsLXMusic => PlayerIdHelper.IsLXMusic(Provider);
+    [JsonIgnore] public bool IsOhMyGoMusic => PlayerIdHelper.IsOhMyGoMusic(Provider);
     [JsonIgnore] public bool IsBetterLyrics => PlayerIdHelper.IsBetterLyrics(Provider);
     [JsonIgnore][ObservableProperty] public partial bool IsFocused { get; set; } = false;
 

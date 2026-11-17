@@ -24,6 +24,9 @@ public partial class GeneralSettings : ObservableObject
     public partial string LXMusicServer { get; set; } = string.Empty;
 
     [ObservableProperty]
+    public partial string OhMyGoMusicServer { get; set; } = "http://127.0.0.1:23332";
+
+    [ObservableProperty]
     public partial string AmllTtmlDbBaseUrl { get; set; } = AmllTTmlDB.BaseUrl;
 
     [ObservableProperty]
@@ -94,6 +97,9 @@ public partial class GeneralSettings : ObservableObject
 
     partial void OnGlobalFontFamilyChanged(string value) =>
         WeakReferenceMessenger.Default.Send(new GlobalFontFamilyChangedMessage(value));
+
+    partial void OnOhMyGoMusicServerChanged(string value) =>
+        WeakReferenceMessenger.Default.Send(new OhMyGoMusicServerChangedMessage(value));
 
     partial void OnLanguageCodeChanged(string value) =>
         WeakReferenceMessenger.Default.Send(new LanguageCodeChangedMessage(value));

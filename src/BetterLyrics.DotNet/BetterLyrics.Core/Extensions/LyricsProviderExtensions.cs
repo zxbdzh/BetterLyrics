@@ -14,6 +14,7 @@ public static class LyricsProviderExtensions
                 LyricsProvider.QQ => LyricsFormat.Qrc,
                 LyricsProvider.Kugou => LyricsFormat.Krc,
                 LyricsProvider.Netease => LyricsFormat.Lrc,
+                LyricsProvider.OhMyGoMusic => LyricsFormat.Lrc,
                 LyricsProvider.AmllTtmlDb => LyricsFormat.Ttml,
                 LyricsProvider.AppleMusic => LyricsFormat.Ttml,
                 LyricsProvider.LocalLrcFile => LyricsFormat.Lrc,

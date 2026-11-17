@@ -294,6 +294,26 @@
                                                 </Grid>
                                             </controls:SettingsCard>
 
+                                            <!--  Oh MyGo Music  -->
+                                            <controls:SettingsCard x:Uid="SettingsPageOhMyGoMusicServer" Visibility="{x:Bind ViewModel.SelectedMediaSourceProvider.IsOhMyGoMusic, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
+                                                <Grid ColumnSpacing="6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox
+                                                        x:Uid="SettingsPageOhMyGoMusicServerInput"
+                                                        IsEnabled="{x:Bind ViewModel.IsOhMyGoMusicServerTesting, Converter={StaticResource BoolNegationConverter}, Mode=OneWay}"
+                                                        Text="{x:Bind ViewModel.AppSettings.GeneralSettings.OhMyGoMusicServer, Mode=TwoWay}"
+                                                        TextWrapping="Wrap" />
+                                                    <Button
+                                                        x:Uid="SettingsPageServerTestButton"
+                                                        Grid.Column="1"
+                                                        Command="{x:Bind ViewModel.OhMyGoMusicServerTestCommand}"
+                                                        IsEnabled="{x:Bind ViewModel.IsOhMyGoMusicServerTesting, Converter={StaticResource BoolNegationConverter}, Mode=OneWay}" />
+                                                </Grid>
+                                            </controls:SettingsCard>
+
                                             <!--  时间轴相关配置  -->
                                             <controls:SettingsExpander x:Uid="SettingsPageLyricsTimeline">
                                                 <ToggleSwitch IsOn="{x:Bind ViewModel.SelectedMediaSourceProvider.IsTimelineSyncEnabled, Mode=TwoWay}" />

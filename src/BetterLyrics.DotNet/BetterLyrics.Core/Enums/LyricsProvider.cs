@@ -15,5 +15,6 @@ public enum LyricsProvider
     LocalTtmlFile,
     AppleMusic,
     BetterLyrics,
-    LibreTranslate
+    LibreTranslate,
+    OhMyGoMusic
 }

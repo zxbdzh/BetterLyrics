@@ -2,6 +2,7 @@ using BetterLyrics.Core.Constants;
 using BetterLyrics.Core.Enums;
 using BetterLyrics.Core.Events;
 using BetterLyrics.Core.Helpers;
+using BetterLyrics.Core.Implementations.Services.GsmtcService;
 using BetterLyrics.Core.Interfaces.Providers;
 using BetterLyrics.Core.Interfaces.Services;
 using BetterLyrics.Core.Interfaces.ViewModels;
@@ -56,6 +57,8 @@ public partial class PlaybackSettingsControlViewModel : ObservableRecipient, ITr
     [ObservableProperty] public partial bool IsLibreTranslateServerTesting { get; set; } = false;
 
     [ObservableProperty] public partial bool IsLxMusicServerTesting { get; set; } = false;
+
+    [ObservableProperty] public partial bool IsOhMyGoMusicServerTesting { get; set; } = false;
 
     [ObservableProperty] public partial int SelectedTargetLanguageIndex { get; set; }
 
@@ -285,6 +288,33 @@ public partial class PlaybackSettingsControlViewModel : ObservableRecipient, ITr
                     _globalToastProvider.Show("SettingsPageServerTestFailedInfo", null, MessageSeverity.Error);
 
                 IsLxMusicServerTesting = false;
+            });
+        });
+    }
+
+    [RelayCommand]
+    private void OhMyGoMusicServerTest()
+    {
+        IsOhMyGoMusicServerTesting = true;
+        _ = Task.Run(async () =>
+        {
+            var testResult = false;
+            try
+            {
+                testResult = await OhMyGoMusicClient.Shared.GetStatusAsync(
+                    AppSettings.GeneralSettings.OhMyGoMusicServer) != null;
+            }
+            catch
+            {
+            }
+            _appUiThreadProvider.Execute(() =>
+            {
+                if (testResult)
+                    _globalToastProvider.Show("SettingsPageServerTestSuccessInfo", null, MessageSeverity.Success);
+                else
+                    _globalToastProvider.Show("SettingsPageServerTestFailedInfo", null, MessageSeverity.Error);
+
+                IsOhMyGoMusicServerTesting = false;
             });
         });
     }
