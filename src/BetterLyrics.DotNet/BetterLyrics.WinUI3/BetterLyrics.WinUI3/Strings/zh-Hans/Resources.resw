@@ -2928,4 +2928,7 @@
   <data name="DemoWindowGridMonitorDisconnected.Text" xml:space="preserve">
     <value>未找到与该模式匹配的显示器</value>
   </data>
+  <data name="LastFMUnavailable" xml:space="preserve">
+    <value>此版本未启用 Last.fm</value>
+  </data>
 </root>

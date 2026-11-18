@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory)]
-    [string]$PackagePath
+    [string]$PackagePath,
+    [switch]$WithoutLastFm
 )
 
 $ErrorActionPreference = 'Stop'
@@ -47,11 +48,19 @@ try {
     try {
         $metadata = [System.Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($peReader)
         foreach ($item in $expectedConstants) {
+            $actual = Get-IntegrationConstant $metadata $item.Type $item.Field
+            if ($WithoutLastFm -and $item.Type -eq 'LastFM') {
+                # 无密钥发行必须真正清空凭据，不能把模板值打包后伪装成可用。
+                if ($actual -ne '') {
+                    throw "The no-Last.fm package unexpectedly contains $($item.Secret)."
+                }
+                Write-Output "$($item.Secret): Last.fm is explicitly disabled."
+                continue
+            }
             $expected = [Environment]::GetEnvironmentVariable($item.Secret)
             if ([string]::IsNullOrWhiteSpace($expected)) {
                 throw "Repository secret $($item.Secret) is unavailable during package verification."
             }
-            $actual = Get-IntegrationConstant $metadata $item.Type $item.Field
             if ([string]::IsNullOrWhiteSpace($actual) -or
                 ($item.Placeholder -and $actual.Trim() -eq $item.Placeholder)) {
                 throw "The packaged value for $($item.Secret) is empty or contains a template placeholder."
