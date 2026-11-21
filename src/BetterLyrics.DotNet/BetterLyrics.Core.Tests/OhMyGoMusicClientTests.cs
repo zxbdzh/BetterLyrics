@@ -13,7 +13,9 @@ public class OhMyGoMusicClientTests
     [InlineData("dev.egoist.music")]
     [InlineData("MyGo Music Dev.exe")]
     [InlineData("dev.egoist.music.dev")]
-    public void RecognizesMyGoMediaSessionIds(string sessionId)
+    [InlineData("Oh MyGo Music.exe")]
+    [InlineData("Oh MyGo Music Dev.exe")]
+    public void RecognizesOhMyGoMusicMediaSessionIds(string sessionId)
     {
         Assert.True(PlayerIdHelper.IsOhMyGoMusic(sessionId));
     }

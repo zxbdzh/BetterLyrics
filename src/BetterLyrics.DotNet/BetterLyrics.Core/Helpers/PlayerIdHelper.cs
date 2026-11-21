@@ -36,8 +36,8 @@ public static class PlayerIdHelper
 
     private static readonly List<string> _ohMyGoMusicRegex =
     [
-        // 开发启动器使用独立名称和 App ID，同样需要启用歌词与进度直连。
-        "(?i)^MyGo Music(?: Dev)?\\.exe$",
+        // 新旧 Windows 进程名和开发版共用联动，同时保留 App ID 识别。
+        "(?i)^(?:MyGo|Oh MyGo) Music(?: Dev)?\\.exe$",
         "(?i)^dev\\.egoist\\.music(?:\\.dev)?$"
     ];
 

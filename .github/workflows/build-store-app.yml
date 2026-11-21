@@ -233,6 +233,7 @@ jobs:
           $assets = @(Get-ChildItem -LiteralPath $env:RELEASE_DIR -File | ForEach-Object FullName)
           $notes = @"
           - 新增 Oh MyGo Music 歌词、译文与播放进度联动。
+          - 适配 Oh MyGo Music 更名及新版应用图标显示。
           - 保留花再 Halo PixelBar 的歌词显示、逐字同步和显示设置。
           - 改善暂停、拖动进度、切歌和歌词稍晚加载后的同步。
           "@
