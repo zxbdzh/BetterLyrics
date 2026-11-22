@@ -232,10 +232,12 @@ jobs:
           $tag = "v$env:VERSION-halo.$env:GITHUB_RUN_NUMBER"
           $assets = @(Get-ChildItem -LiteralPath $env:RELEASE_DIR -File | ForEach-Object FullName)
           $notes = @"
-          - 新增 Oh MyGo Music 歌词、译文与播放进度联动。
-          - 适配 Oh MyGo Music 更名及新版应用图标显示。
-          - 保留花再 Halo PixelBar 的歌词显示、逐字同步和显示设置。
-          - 改善暂停、拖动进度、切歌和歌词稍晚加载后的同步。
+          - 在 BetterLyrics 手动搜索并保存歌词后，可将原文、译文和已有时间轴同步到 Oh MyGo Music。
+          - 配合支持歌词覆盖的 MyGo 版本，切歌或重开后继续使用手动选择的歌词。
+          - 同步失败时保留 BetterLyrics 本地结果，并提示连接、权限或歌曲切换问题。
+          - 改善恢复原始歌词后的显示，修复重开后逐字歌词空格与时间轴丢失的问题。
+
+          使用歌词写入功能需要安装支持此功能的 Oh MyGo Music 版本，并在 MyGo「设置 → 播放」开启「与 BetterLyrics 联动」及「允许 BetterLyrics 修改歌词」。本次仅发布 BetterLyrics，不包含 MyGo 更新；MyGo 0.0.11 尚不支持歌词写入。原有只读歌词与播放进度联动继续保留。
           "@
           if ($env:WITHOUT_LASTFM -eq 'true') {
             $notes += "`n- 此安装包未启用 Last.fm 登录与听歌记录，不需要配置 Last.fm API 密钥。"
