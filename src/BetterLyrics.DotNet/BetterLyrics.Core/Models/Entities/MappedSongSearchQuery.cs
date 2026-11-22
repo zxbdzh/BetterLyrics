@@ -32,6 +32,10 @@ public partial class MappedSongSearchQuery : ObservableObject, ICloneable
     [ObservableProperty]
     public partial LyricsProvider? LyricsSearchProvider { get; set; }
 
+    // 保存实际选中的歌词，避免断网或同步失败后又自动选回另一个搜索结果。
+    public LyricsCacheItem? ManualLyrics { get; set; }
+    public bool MyGoOverrideSaved { get; set; }
+
     public object Clone()
     {
         return new MappedSongSearchQuery
@@ -43,7 +47,9 @@ public partial class MappedSongSearchQuery : ObservableObject, ICloneable
             MappedArtist = MappedArtist,
             MappedAlbum = MappedAlbum,
             IsMarkedAsPureMusic = IsMarkedAsPureMusic,
-            LyricsSearchProvider = LyricsSearchProvider
+            LyricsSearchProvider = LyricsSearchProvider,
+            ManualLyrics = (LyricsCacheItem?)ManualLyrics?.Clone(),
+            MyGoOverrideSaved = MyGoOverrideSaved
         };
     }
 

@@ -138,6 +138,18 @@
   <data name="ActionCompleted" xml:space="preserve">
     <value>操作完成</value>
   </data>
+  <data name="OhMyGoMusicLyricsSyncFailed" xml:space="preserve">
+    <value>歌词同步到 Oh MyGo Music 失败</value>
+  </data>
+  <data name="OhMyGoMusicLyricsSavedLocally" xml:space="preserve">
+    <value>歌词已保存在 BetterLyrics。请检查 MyGo 连接后再次点击保存重试。</value>
+  </data>
+  <data name="OhMyGoMusicLyricsWriteDisabled" xml:space="preserve">
+    <value>歌词已保存在 BetterLyrics。请在 MyGo 开启“允许 BetterLyrics 修改歌词”后再次保存。</value>
+  </data>
+  <data name="OhMyGoMusicLyricsTrackChanged" xml:space="preserve">
+    <value>歌曲已切换，请重新搜索当前歌曲的歌词后再同步。</value>
+  </data>
   <data name="Add" xml:space="preserve">
     <value>添加</value>
   </data>

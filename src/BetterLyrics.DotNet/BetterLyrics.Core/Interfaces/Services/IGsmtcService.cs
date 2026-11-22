@@ -5,6 +5,7 @@ using BetterLyrics.Core.Models;
 using BetterLyrics.Core.Models.Domain;
 using BetterLyrics.Core.Models.Entities;
 using BetterLyrics.Core.Models.Lyrics;
+using BetterLyrics.Core.Models.Http;
 using BetterLyrics.Core.Models.Settings;
 using System.ComponentModel;
 
@@ -30,6 +31,7 @@ public interface IGsmtcService : INotifyPropertyChanged
     byte[]? AlbumArtBytes { get; }
 
     LyricsCacheItem? CurrentLyricsSearchResult { get; }
+    OhMyGoMusicStatus? CurrentOhMyGoMusicStatus { get; }
     Task PlayAsync();
     Task PauseAsync();
     Task StopAsync();
@@ -37,6 +39,7 @@ public interface IGsmtcService : INotifyPropertyChanged
     Task NextAsync();
     Task ChangePositionAsync(double seconds);
     Task ChangeLyricsLineAsync(int index);
+    Task WriteCurrentOhMyGoMusicLyricsAsync(OhMyGoMusicStatus? expected, SongInfo song, OhMyGoMusicLyrics lyrics, CancellationToken token = default);
 
     void UpdateLyrics();
 

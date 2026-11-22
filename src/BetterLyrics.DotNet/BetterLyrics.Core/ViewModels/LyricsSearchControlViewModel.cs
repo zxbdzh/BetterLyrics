@@ -1,11 +1,14 @@
 using BetterLyrics.Core.Enums;
 using BetterLyrics.Core.Extensions;
+using BetterLyrics.Core.Helpers;
+using BetterLyrics.Core.Implementations.Services.GsmtcService;
 using BetterLyrics.Core.Interfaces.Providers;
 using BetterLyrics.Core.Interfaces.Services;
 using BetterLyrics.Core.Interfaces.ViewModels;
 using BetterLyrics.Core.Messages.Playback;
 using BetterLyrics.Core.Models;
 using BetterLyrics.Core.Models.Entities;
+using BetterLyrics.Core.Models.Http;
 using BetterLyrics.Core.Models.Lyrics;
 using BetterLyrics.Core.Models.Settings;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -30,6 +33,9 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
     private readonly ISettingsService _settingsService;
     private readonly ISongSearchMapService _songSearchMapService;
     private readonly ILogger<LyricsSearchControlViewModel> _logger;
+    private SongInfo? _searchSong;
+    private OhMyGoMusicStatus? _searchMyGoStatus;
+    private readonly ILocalizationService _localizationService;
 
     public IGsmtcService GsmtcService { get; set; }
 
@@ -55,7 +61,7 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
     ISongSearchMapService songSearchMapService,
     IAppUIThreadProvider appUiThreadProvider,
     IGlobalToastProvider globalToastProvider,
-    ILogger<LyricsSearchControlViewModel> logger)
+    ILogger<LyricsSearchControlViewModel> logger, ILocalizationService localizationService)
     {
         _lyricsSearchService = lyricsSearchService;
         _settingsService = settingsService;
@@ -63,6 +69,7 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
         _appUIThreadProvider = appUiThreadProvider;
         _globalToastProvider = globalToastProvider;
         _logger = logger;
+        _localizationService = localizationService;
 
         GsmtcService = gsmtcService;
         AppSettings = _settingsService.AppSettings;
@@ -76,6 +83,9 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
     {
         LyricsSearchResults.Clear();
         LyricsDataArr = null;
+        SelectedLyricsSearchResult = null;
+        _searchSong = null;
+        _searchMyGoStatus = null;
         if (GsmtcService.CurrentSongInfo != SongInfoExtensions.Placeholder)
         {
             var found = await _songSearchMapService.TryGetMappingAsync(GsmtcService.CurrentSongInfo);
@@ -129,6 +139,10 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
         IsSearching = true;
         LyricsSearchResults.Clear();
         MappedSongSearchQuery.LyricsSearchProvider = null;
+        var searchedSong = (SongInfo)GsmtcService.CurrentSongInfo.Clone();
+        _searchSong = searchedSong;
+        _searchMyGoStatus = GsmtcService.CurrentOhMyGoMusicStatus;
+        var searchQuery = (MappedSongSearchQuery)MappedSongSearchQuery.Clone();
 
         var activeProviders = _lyricsSearchService.GetActiveProviders();
         foreach (var provider in activeProviders)
@@ -142,10 +156,26 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
         {
             try
             {
-                var songInfo = ((SongInfo)GsmtcService.CurrentSongInfo.Clone())
-                    .WithTitle(MappedSongSearchQuery.MappedTitle)
-                    .WithArtist(MappedSongSearchQuery.MappedArtist)
-                    .WithAlbum(MappedSongSearchQuery.MappedAlbum);
+                if (PlayerIdHelper.IsOhMyGoMusic(searchedSong.PlayerId) && _searchMyGoStatus == null)
+                {
+                    try
+                    {
+                        var snapshot = await OhMyGoMusicClient.Shared.GetStatusAsync(AppSettings.GeneralSettings.OhMyGoMusicServer);
+                        _appUIThreadProvider.Execute(() =>
+                        {
+                            if (ReferenceEquals(_searchSong, searchedSong) && snapshot != null &&
+                                OhMyGoMusicClient.MatchesSong(snapshot, searchedSong)) _searchMyGoStatus = snapshot;
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(ex, "Oh MyGo Music is unavailable while searching; keep manual lyrics locally.");
+                    }
+                }
+                var songInfo = ((SongInfo)searchedSong.Clone())
+                    .WithTitle(searchQuery.MappedTitle)
+                    .WithArtist(searchQuery.MappedArtist)
+                    .WithAlbum(searchQuery.MappedAlbum);
 
                 var checkCache = !_settingsService.AppSettings.GeneralSettings.IgnoreCacheWhenSearching;
 
@@ -167,6 +197,7 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
                         await parser.ParseAsync(item, CancellationToken.None);
                         _appUIThreadProvider.Execute(() =>
                         {
+                            if (!ReferenceEquals(_searchSong, searchedSong)) return;
                             LyricsSearchResults[index] = item;
                             item.IsSearching = false;
                             item.LyricsDataArr = parser.LyricsDataArr;
@@ -182,6 +213,7 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
             {
                 _appUIThreadProvider.Execute(() =>
                 {
+                    if (!ReferenceEquals(_searchSong, searchedSong)) return;
                     for (var i = LyricsSearchResults.Count - 1; i >= 0; i--)
                     {
                         var result = LyricsSearchResults[i];
@@ -194,6 +226,7 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
             }
             _appUIThreadProvider.Execute(() =>
             {
+                if (!ReferenceEquals(_searchSong, searchedSong)) return;
                 IsSearching = false;
             });
         });
@@ -203,9 +236,49 @@ public partial class LyricsSearchControlViewModel : ObservableRecipient, ISingle
     private async Task SaveAsync()
     {
         if (MappedSongSearchQuery == null) return;
-
-        await _songSearchMapService.SaveMappingAsync(MappedSongSearchQuery);
-        MappedSongSearchQuery = (MappedSongSearchQuery)MappedSongSearchQuery.Clone();
+        var mapping = (MappedSongSearchQuery)MappedSongSearchQuery.Clone();
+        var currentSong = GsmtcService.CurrentSongInfo;
+        var expected = _searchMyGoStatus;
+        var selected = SelectedLyricsSearchResult;
+        var isMyGo = PlayerIdHelper.IsOhMyGoMusic(currentSong.PlayerId);
+        OhMyGoMusicLyrics? payload = null;
+        if (isMyGo && selected is { IsFound: true } && !mapping.IsMarkedAsPureMusic)
+        {
+            if (_searchSong?.StartedAt != currentSong.StartedAt)
+            {
+                _globalToastProvider.Show("OhMyGoMusicLyricsTrackChanged", null, MessageSeverity.Warning);
+                return;
+            }
+            var parser = new LyricsContentParser();
+            var tracks = await parser.ParseForSynchronizationAsync(selected, CancellationToken.None);
+            payload = OhMyGoMusicLyricsAdapter.ToWriteModel(selected, tracks);
+            mapping.ManualLyrics = OhMyGoMusicLyricsAdapter.ToCacheItem(payload);
+            mapping.ManualLyrics.CopyFromSongInfo(currentSong);
+            mapping.MyGoOverrideSaved = false;
+        }
+        await _songSearchMapService.SaveMappingAsync(mapping);
+        if (payload != null)
+        {
+            try
+            {
+                await GsmtcService.WriteCurrentOhMyGoMusicLyricsAsync(expected, currentSong, payload);
+                mapping.MyGoOverrideSaved = true;
+                await _songSearchMapService.SaveMappingAsync(mapping);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to sync manually selected lyrics to Oh MyGo Music.");
+                var reason = ex is HttpRequestException { StatusCode: HttpStatusCode.Forbidden }
+                    ? "OhMyGoMusicLyricsWriteDisabled"
+                    : ex is HttpRequestException { StatusCode: HttpStatusCode.Conflict }
+                        ? "OhMyGoMusicLyricsTrackChanged"
+                        : "OhMyGoMusicLyricsSavedLocally";
+                _globalToastProvider.Show("OhMyGoMusicLyricsSyncFailed",
+                    _localizationService.GetLocalizedString(reason), MessageSeverity.Warning);
+            }
+        }
+        if (GsmtcService.CurrentSongInfo.StartedAt == currentSong.StartedAt)
+            MappedSongSearchQuery = mapping;
         GsmtcService.UpdateLyrics();
     }
 

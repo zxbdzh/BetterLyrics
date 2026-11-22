@@ -9,6 +9,53 @@ namespace BetterLyrics.Core.Implementations.Services.GsmtcService;
 
 public static class OhMyGoMusicLyricsAdapter
 {
+    public static OhMyGoMusicLyrics ToWriteModel(LyricsCacheItem source, IReadOnlyList<LyricsData>? parsedTracks = null)
+    {
+        var result = new OhMyGoMusicLyrics
+        {
+            Lrc = source.Raw ?? string.Empty,
+            Translation = source.Translation ?? string.Empty
+        };
+        var tracks = parsedTracks ?? source.LyricsDataArr;
+        var original = tracks?.FirstOrDefault(data =>
+            data.TrackType == LyricsTrackType.Original && !data.IsPlaceholder);
+        if (original == null) return result;
+        var translation = tracks?.FirstOrDefault(data => data.TrackType == LyricsTrackType.Translation);
+
+        foreach (var line in original.LyricsLines)
+        {
+            if (line.StartMs < 0 || string.IsNullOrWhiteSpace(line.PrimaryText)) continue;
+            var target = new OhMyGoMusicLyricLine
+            {
+                Start = line.StartMs,
+                End = line.EndMs is > 0 ? line.EndMs.Value : 0,
+                Text = line.PrimaryText,
+                Translation = translation?.LyricsLines.FirstOrDefault(candidate => Math.Abs(candidate.StartMs - line.StartMs) < 50)?.PrimaryText
+                    ?? line.SecondaryText
+            };
+            if (line.IsPrimaryHasRealSyllableInfo)
+            {
+                var words = line.PrimarySyllables
+                    .Where(word => word.StartMs >= line.StartMs && word.EndMs > word.StartMs && !string.IsNullOrEmpty(word.Text))
+                    .Select(word => new OhMyGoMusicLyricWord
+                    {
+                        Start = word.StartMs,
+                        End = word.EndMs!.Value,
+                        Text = word.Text
+                    })
+                    .ToList();
+                if (words.Count > 0 && words.All(word => target.End == 0 || word.End <= target.End) &&
+                    string.Concat(words.Select(word => word.Text)) == line.PrimaryText)
+                    target.Words = words;
+            }
+            result.Lines.Add(target);
+        }
+        // 外部来源可能是 QRC/TTML；写给 MyGo 的文本统一为 LRC，逐字时间另外无损携带。
+        result.Lrc = BuildLrc(result.Lines, false);
+        result.Translation = BuildLrc(result.Lines, true);
+        return result;
+    }
+
     public static LyricsCacheItem ToCacheItem(OhMyGoMusicLyrics source)
     {
         var raw = string.IsNullOrWhiteSpace(source.Lrc) ? BuildLrc(source.Lines, false) : source.Lrc;
@@ -17,7 +64,8 @@ public static class OhMyGoMusicLyricsAdapter
         {
             Provider = LyricsProvider.OhMyGoMusic,
             Raw = raw,
-            Translation = translation
+            Translation = translation,
+            TimedLyrics = source
         };
     }
 

@@ -13,6 +13,13 @@ public class LyricsParseRule
     public ChineseConversion ChineseConversion { get; }
     public bool IsFilterEnabled { get; }
 
+    private LyricsParseRule()
+    {
+        IsTranslationEnabled = true;
+    }
+
+    public static LyricsParseRule ForSynchronization() => new();
+
     public LyricsParseRule(TranslationSettings settings)
     {
         IsTranslationEnabled = settings.IsTranslationEnabled;

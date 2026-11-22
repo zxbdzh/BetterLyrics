@@ -1,5 +1,8 @@
 using BetterLyrics.Core.Implementations.Services.GsmtcService;
 using BetterLyrics.Core.Helpers;
+using BetterLyrics.Core.Models;
+using BetterLyrics.Core.Models.Http;
+using System.Text.Json;
 using System.Net;
 using System.Text;
 using Xunit;
@@ -88,17 +91,67 @@ public class OhMyGoMusicClientTests
         await Assert.ThrowsAsync<ArgumentException>(() => client.GetStatusAsync("http://example.com"));
     }
 
-    private sealed class RecordingHandler(string body) : HttpMessageHandler
+    [Fact]
+    public async Task WritesStableSongIdentityAndClientHeaderWithLyrics()
+    {
+        var handler = new RecordingHandler("{}");
+        using var httpClient = new HttpClient(handler);
+        var client = new OhMyGoMusicClient(httpClient);
+        await client.WriteLyricsOverrideAsync("http://127.0.0.1:23332", new OhMyGoMusicLyricsOverrideRequest
+        {
+            TrackId = 7,
+            InstanceId = "current-instance",
+            SongKey = new() { Source = "local", StableId = "C:\\Music\\song.mp3" },
+            Lyrics = new() { Lrc = "[00:01.234]hello" }
+        });
+        Assert.Equal(HttpMethod.Put, handler.Method);
+        Assert.Equal("BetterLyrics", handler.ClientHeader);
+        Assert.Equal("http://127.0.0.1:23332/lyrics-override", handler.RequestUri!.ToString());
+        using var body = JsonDocument.Parse(handler.Body!);
+        Assert.Equal("current-instance", body.RootElement.GetProperty("instanceId").GetString());
+        Assert.Equal("C:\\Music\\song.mp3", body.RootElement.GetProperty("songKey").GetProperty("stableId").GetString());
+        Assert.Equal("[00:01.234]hello", body.RootElement.GetProperty("lyrics").GetProperty("lrc").GetString());
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden)]
+    [InlineData(HttpStatusCode.Conflict)]
+    public async Task PreservesWriteFailureStatusForUserFeedback(HttpStatusCode status)
+    {
+        using var httpClient = new HttpClient(new RecordingHandler("{\"code\":\"write_disabled\"}", status));
+        var client = new OhMyGoMusicClient(httpClient);
+        var error = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            client.WriteLyricsOverrideAsync("http://127.0.0.1:23332", new()));
+        Assert.Equal(status, error.StatusCode);
+    }
+
+    [Fact]
+    public void RejectsDifferentSongMetadataAndSourceIdentity()
+    {
+        var status = new OhMyGoMusicStatus { TrackId = 7, Title = "Song", Artist = "Singer", Album = "Album" };
+        Assert.True(OhMyGoMusicClient.MatchesSong(status, new SongInfo { Title = "Song", Artist = "Singer", Album = "Album" }));
+        Assert.False(OhMyGoMusicClient.MatchesSong(status, new SongInfo { Title = "Other", Artist = "Singer", Album = "Album" }));
+        Assert.False(OhMyGoMusicClient.SameSongKey(new() { Source = "one", StableId = "7" }, new() { Source = "two", StableId = "7" }));
+        Assert.False(OhMyGoMusicClient.SameSongKey(new(), new()));
+    }
+
+    private sealed class RecordingHandler(string body, HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler
     {
         public Uri? RequestUri { get; private set; }
+        public string? Body { get; private set; }
+        public HttpMethod? Method { get; private set; }
+        public string? ClientHeader { get; private set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestUri = request.RequestUri;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            Method = request.Method;
+            Body = request.Content == null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
+            ClientHeader = request.Headers.TryGetValues("X-BetterLyrics-Client", out var values) ? values.Single() : null;
+            return new HttpResponseMessage(status)
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json")
-            });
+            };
         }
     }
 }

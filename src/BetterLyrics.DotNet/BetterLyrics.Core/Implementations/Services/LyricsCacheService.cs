@@ -69,6 +69,7 @@ public class LyricsCacheService : ILyricsCacheService
 
             existingItem.Raw = result.Raw;
             existingItem.Translation = result.Translation;
+            existingItem.TimedLyrics = result.TimedLyrics;
 
             existingItem.MatchPercentage = result.MatchPercentage;
             existingItem.Reference = result.Reference;

@@ -138,6 +138,18 @@
   <data name="ActionCompleted" xml:space="preserve">
     <value>Action completed</value>
   </data>
+  <data name="OhMyGoMusicLyricsSyncFailed" xml:space="preserve">
+    <value>Could not sync lyrics to Oh MyGo Music</value>
+  </data>
+  <data name="OhMyGoMusicLyricsSavedLocally" xml:space="preserve">
+    <value>Your lyrics are saved in BetterLyrics. Check the MyGo connection and save again to retry.</value>
+  </data>
+  <data name="OhMyGoMusicLyricsWriteDisabled" xml:space="preserve">
+    <value>Your lyrics are saved in BetterLyrics. Enable “Allow BetterLyrics to Change Lyrics” in MyGo and save again.</value>
+  </data>
+  <data name="OhMyGoMusicLyricsTrackChanged" xml:space="preserve">
+    <value>The song has changed. Search for the current song again before syncing.</value>
+  </data>
   <data name="Add" xml:space="preserve">
     <value>Add</value>
   </data>

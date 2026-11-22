@@ -5,6 +5,7 @@ using BetterLyrics.Core.Messages.Playback;
 using BetterLyrics.Core.Models.Entities;
 using BetterLyrics.Core.Models.Http;
 using BetterLyrics.Core.Models.Lyrics;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
@@ -17,6 +18,8 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
     private readonly Debouncer _lyricsDebouncer = new();
     private readonly Debouncer _lyricsPresentationDebouncer = new();
     private (LyricsCacheItem Result, OhMyGoMusicLyrics Source)? _ohMyGoMusicLyricsSnapshot;
+    private bool _ohMyGoMusicStatusAvailable;
+    private bool _ohMyGoMusicOverrideActive;
 
     /// <summary>
     /// 标记本次 <see cref="CurrentLyricsData"/> 变更是否只是译文（翻译 / 音译）的显示变化
@@ -77,6 +80,8 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
     private async Task RefreshLyricsAsync(CancellationToken token)
     {
         _ohMyGoMusicLyricsSnapshot = null;
+        _ohMyGoMusicStatusAvailable = false;
+        _ohMyGoMusicOverrideActive = false;
         if (CurrentSongInfo != SongInfoExtensions.Placeholder)
         {
             var maxRetries = _settingsService.AppSettings.GeneralSettings.MaxAutoRetryCount;
@@ -84,7 +89,20 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
 
             if (PlayerIdHelper.IsOhMyGoMusic(CurrentSongInfo.PlayerId))
             {
-                var sourceLyrics = await TryGetOhMyGoMusicLyricsAsync(token);
+                var mapping = await Ioc.Default.GetRequiredService<ISongSearchMapService>().TryGetMappingAsync(CurrentSongInfo, token);
+                var localLyrics = mapping?.ManualLyrics;
+                var sourceLyrics = mapping?.MyGoOverrideSaved == true
+                    ? await TryGetOhMyGoMusicLyricsAsync(token)
+                    : localLyrics?.TimedLyrics ?? await TryGetOhMyGoMusicLyricsAsync(token);
+                if (mapping?.MyGoOverrideSaved == true && _ohMyGoMusicStatusAvailable && !_ohMyGoMusicOverrideActive &&
+                    mapping.ManualLyrics != null)
+                {
+                    // MyGo 已清除覆盖时同时废弃本地备份，避免下次离线或重开又显示被撤销的歌词。
+                    mapping.ManualLyrics = null;
+                    await Ioc.Default.GetRequiredService<ISongSearchMapService>().SaveMappingAsync(mapping);
+                }
+                if (sourceLyrics == null && mapping?.MyGoOverrideSaved == true && !_ohMyGoMusicStatusAvailable)
+                    sourceLyrics = mapping.ManualLyrics?.TimedLyrics;
                 if (sourceLyrics != null)
                 {
                     var cacheItem = OhMyGoMusicLyricsAdapter.ToCacheItem(sourceLyrics);
@@ -100,6 +118,12 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
                         CurrentLyricsData = lyricsData;
                         return;
                     }
+                }
+                if (mapping?.MyGoOverrideSaved == true &&
+                    (_ohMyGoMusicStatusAvailable && !_ohMyGoMusicOverrideActive || mapping.ManualLyrics == null))
+                {
+                    CurrentLyricsData = LyricsDataExtensions.NotFoundPlaceholder;
+                    return;
                 }
             }
 
@@ -151,10 +175,16 @@ public abstract partial class GsmtcServiceBase : IGsmtcService
         try
         {
             var status = await OhMyGoMusicClient.Shared.GetStatusAsync(serverAddress, token);
-            if (status == null || status.TrackId == 0) return null;
+            if (status == null || !OhMyGoMusicClient.MatchesSong(status, CurrentSongInfo)) return null;
+            _ohMyGoMusicStatusAvailable = true;
+            _ohMyGoMusicOverrideActive = status.LyricsOrigin == "override";
+            CurrentOhMyGoMusicStatus = status;
 
             var lyrics = await OhMyGoMusicClient.Shared.GetLyricsAsync(serverAddress, status.TrackId, token);
-            return lyrics?.TrackId == status.TrackId ? lyrics : null;
+            if (lyrics?.TrackId != status.TrackId) return null;
+            if (!string.IsNullOrEmpty(status.SongKey.StableId) &&
+                !OhMyGoMusicClient.SameSongKey(lyrics.SongKey, status.SongKey)) return null;
+            return lyrics;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {

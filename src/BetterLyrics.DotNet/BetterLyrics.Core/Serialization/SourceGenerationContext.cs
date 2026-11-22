@@ -11,6 +11,7 @@ namespace BetterLyrics.Core.Serialization;
 [JsonSerializable(typeof(LibreTranslateResponse))]
 [JsonSerializable(typeof(OhMyGoMusicStatus))]
 [JsonSerializable(typeof(OhMyGoMusicLyrics))]
+[JsonSerializable(typeof(OhMyGoMusicLyricsOverrideRequest))]
 [JsonSerializable(typeof(JsonElement))]
 [JsonSerializable(typeof(AppSettings))]
 [JsonSerializable(typeof(LyricsCacheItem))]

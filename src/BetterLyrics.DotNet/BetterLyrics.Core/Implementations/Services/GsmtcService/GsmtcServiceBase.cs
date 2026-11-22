@@ -12,6 +12,7 @@ using BetterLyrics.Core.Messages.LyricsWindow;
 using BetterLyrics.Core.Messages.MediaLibrary;
 using BetterLyrics.Core.Messages.Playback;
 using BetterLyrics.Core.Models;
+using BetterLyrics.Core.Models.Entities;
 using BetterLyrics.Core.Models.Http;
 using BetterLyrics.Core.Models.Memory;
 using BetterLyrics.Core.Models.Settings;
@@ -58,7 +59,10 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
     private EventSourceReader? _lxMusicSse;
     private EventSourceReader? _ohMyGoMusicSse;
     private ulong _ohMyGoMusicTrackId;
+    private ulong _ohMyGoMusicLyricsRevision;
+    private string _ohMyGoMusicInstanceId = string.Empty;
     private bool _ohMyGoMusicLyricsReady;
+    public OhMyGoMusicStatus? CurrentOhMyGoMusicStatus { get; private set; }
     private byte[]? _smtcAlbumArtBuffer;
 
     /// <summary>
@@ -320,6 +324,31 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
     {
         if (CurrentLyricsData?.LyricsLines?.ElementAtOrDefault(index)?.StartMs is int startMs)
             await ChangePositionAsync(startMs / 1000.0);
+    }
+
+    public async Task WriteCurrentOhMyGoMusicLyricsAsync(OhMyGoMusicStatus? expected, SongInfo song, OhMyGoMusicLyrics lyrics, CancellationToken token = default)
+    {
+        var serverAddress = _settingsService.AppSettings.GeneralSettings.OhMyGoMusicServer;
+        var status = await OhMyGoMusicClient.Shared.GetStatusAsync(serverAddress, token);
+        if (status == null || status.TrackId == 0 || string.IsNullOrWhiteSpace(status.InstanceId) ||
+            string.IsNullOrWhiteSpace(status.SongKey.Source) || string.IsNullOrWhiteSpace(status.SongKey.StableId))
+        {
+            throw new InvalidOperationException("Oh MyGo Music did not provide a stable current song identity.");
+        }
+        if (!PlayerIdHelper.IsOhMyGoMusic(CurrentSongInfo.PlayerId) || CurrentSongInfo.StartedAt != song.StartedAt ||
+            !OhMyGoMusicClient.MatchesSong(status, song) || expected == null ||
+            expected.TrackId != status.TrackId || expected.InstanceId != status.InstanceId ||
+            !OhMyGoMusicClient.SameSongKey(expected.SongKey, status.SongKey))
+            throw new HttpRequestException("The current track has changed.", null, System.Net.HttpStatusCode.Conflict);
+
+        var request = new OhMyGoMusicLyricsOverrideRequest
+        {
+            TrackId = status.TrackId,
+            InstanceId = status.InstanceId,
+            SongKey = status.SongKey,
+            Lyrics = lyrics
+        };
+        await OhMyGoMusicClient.Shared.WriteLyricsOverrideAsync(serverAddress, request, token);
     }
 
     public void Receive(TranslationSettingsChangedMessage message)
@@ -856,9 +885,12 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
 
     private void StopOhMyGoMusicSSE()
     {
+        CurrentOhMyGoMusicStatus = null;
         if (_ohMyGoMusicSse is null)
         {
             _ohMyGoMusicTrackId = 0;
+            _ohMyGoMusicLyricsRevision = 0;
+            _ohMyGoMusicInstanceId = string.Empty;
             _ohMyGoMusicLyricsReady = false;
             return;
         }
@@ -867,6 +899,8 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
         _ohMyGoMusicSse.Dispose();
         _ohMyGoMusicSse = null;
         _ohMyGoMusicTrackId = 0;
+        _ohMyGoMusicLyricsRevision = 0;
+        _ohMyGoMusicInstanceId = string.Empty;
         _ohMyGoMusicLyricsReady = false;
     }
 
@@ -903,11 +937,17 @@ public abstract partial class GsmtcServiceBase : ObservableObject, IGsmtcService
         _appUIThreadProvider.RunAsync(() =>
         {
             if (!PlayerIdHelper.IsOhMyGoMusic(CurrentSongInfo.PlayerId)) return;
+            if (!OhMyGoMusicClient.MatchesSong(snapshot, CurrentSongInfo)) return;
 
             // 来源歌词可以晚于音频返回，同曲目从未就绪到就绪也要替换搜索回退结果。
             var lyricsChanged = _ohMyGoMusicTrackId != snapshot.TrackId ||
-                                snapshot.LyricsReady && !_ohMyGoMusicLyricsReady;
+                                snapshot.LyricsReady && !_ohMyGoMusicLyricsReady ||
+                                snapshot.LyricsRevision != _ohMyGoMusicLyricsRevision ||
+                                snapshot.InstanceId != _ohMyGoMusicInstanceId;
             _ohMyGoMusicTrackId = snapshot.TrackId;
+            _ohMyGoMusicLyricsRevision = snapshot.LyricsRevision;
+            _ohMyGoMusicInstanceId = snapshot.InstanceId;
+            CurrentOhMyGoMusicStatus = snapshot;
             _ohMyGoMusicLyricsReady = snapshot.LyricsReady;
             if (lyricsChanged)
             {

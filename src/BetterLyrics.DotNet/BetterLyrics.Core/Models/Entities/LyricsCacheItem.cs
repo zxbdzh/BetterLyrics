@@ -1,6 +1,8 @@
 using BetterLyrics.Core.Enums;
 using BetterLyrics.Core.Extensions;
 using BetterLyrics.Core.Models.Lyrics;
+using BetterLyrics.Core.Models.Http;
+using BetterLyrics.Core.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using LiteDB;
 using System.Text.Json.Serialization;
@@ -43,6 +45,17 @@ public partial class LyricsCacheItem : ObservableObject, ICloneable
     /// 音译也可能位于 <see cref="Raw" />
     /// </summary>
     public string? Transliteration { get; set; }
+
+    [BsonIgnore] public OhMyGoMusicLyrics? TimedLyrics { get; set; }
+
+    // LiteDB 会裁剪字符串首尾空白；时间轴存成 JSON 才能保留音节之间的空格。
+    [JsonIgnore]
+    public string? TimedLyricsJson
+    {
+        get => TimedLyrics == null ? null : System.Text.Json.JsonSerializer.Serialize(TimedLyrics, SourceGenerationContext.Default.OhMyGoMusicLyrics);
+        set => TimedLyrics = string.IsNullOrWhiteSpace(value) ? null :
+            System.Text.Json.JsonSerializer.Deserialize(value, SourceGenerationContext.Default.OhMyGoMusicLyrics);
+    }
 
     public string? Title { get; set; }
 
@@ -87,6 +100,7 @@ public partial class LyricsCacheItem : ObservableObject, ICloneable
             Raw = Raw,
             Translation = Translation,
             Transliteration = Transliteration,
+            TimedLyrics = TimedLyrics,
 
             Title = Title,
             Artist = Artist,

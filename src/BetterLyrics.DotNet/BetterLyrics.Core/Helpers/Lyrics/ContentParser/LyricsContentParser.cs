@@ -4,6 +4,7 @@ using BetterLyrics.Core.Enums;
 using BetterLyrics.Core.Extensions;
 using BetterLyrics.Core.Interfaces.Providers;
 using BetterLyrics.Core.Interfaces.Services;
+using BetterLyrics.Core.Implementations.Services.GsmtcService;
 using BetterLyrics.Core.Models.Entities;
 using BetterLyrics.Core.Models.Lyrics;
 using CommunityToolkit.Mvvm.DependencyInjection;
@@ -35,7 +36,10 @@ public partial class LyricsContentParser
 
     public List<LyricsData> LyricsDataArr { get; private set; } = [];
 
-    private async Task<List<LyricsData>> PreParseAsync(LyricsCacheItem? lyricsSearchResult, LyricsParseRule rule, CancellationToken token)
+    public Task<List<LyricsData>> ParseForSynchronizationAsync(LyricsCacheItem source, CancellationToken token) =>
+        PreParseAsync(source, LyricsParseRule.ForSynchronization(), token, false);
+
+    private async Task<List<LyricsData>> PreParseAsync(LyricsCacheItem? lyricsSearchResult, LyricsParseRule rule, CancellationToken token, bool generateAuxiliary = true)
     {
         LyricsDataArr = [];
         if (string.IsNullOrWhiteSpace(lyricsSearchResult?.Raw))
@@ -67,11 +71,17 @@ public partial class LyricsContentParser
         LoadTranslation(lyricsSearchResult, rule);
         LoadTransliteration(lyricsSearchResult, rule);
 
-        await GenerateTranslationLyricsDataAsync(rule, token);
-        await GenerateTransliterationLyricsDataAsync(rule, token);
+        // 同步只保留来源已有内容，不应用显示过滤，也不为同步额外调用翻译服务。
+        if (generateAuxiliary)
+        {
+            await GenerateTranslationLyricsDataAsync(rule, token);
+            await GenerateTransliterationLyricsDataAsync(rule, token);
+        }
 
         EnsureSyllables(lyricsSearchResult?.Duration);
         EnsureEndMs(lyricsSearchResult?.Duration);
+        if (lyricsSearchResult?.TimedLyrics is { } timedLyrics && LyricsDataArr.Count > 0)
+            OhMyGoMusicLyricsAdapter.ApplyWordTimes(LyricsDataArr[0], timedLyrics);
         foreach (var line in LyricsDataArr.SelectMany(data => data.LyricsLines))
         {
             line.RebuildPrimaryChars();

@@ -104,6 +104,9 @@ public class LyricsSearchService : ILyricsSearchService
                         return lyricsSearchResult;
                     }
 
+                    if (found.ManualLyrics is { IsFound: true } manualLyrics)
+                        return (LyricsCacheItem)manualLyrics.Clone();
+
                     var targetProvider = found.LyricsSearchProvider;
                     if (targetProvider != null)
                         return await SearchSingleAsync(

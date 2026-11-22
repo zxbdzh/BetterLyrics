@@ -55,6 +55,8 @@ public class SongSearchMapService : ISongSearchMapService
 
             existing.IsMarkedAsPureMusic = mapping.IsMarkedAsPureMusic;
             existing.LyricsSearchProvider = mapping.LyricsSearchProvider;
+            existing.ManualLyrics = mapping.ManualLyrics;
+            existing.MyGoOverrideSaved = mapping.MyGoOverrideSaved;
 
             col.Update(existing);
             _logger.LogDebug("Updated song search mapping: {OriginalTitle} - {OriginalArtist} -> {MappedTitle} - {MappedArtist}.",
